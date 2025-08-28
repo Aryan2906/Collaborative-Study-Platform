@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Room</title>
+  <link rel="style" href="/static/style.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f9f9f9;
+    }
+    /* Title bar */
+    .room-title {
+      font-size: 28px;
+      font-weight: bold;
+      text-align: left;
+      padding: 10px 20px;
+      border-bottom: 2px solid black;
+      background: white;
+    }
+    /* Main container with chat area and messages */
+    .main {
+      flex: 1;
+      display: flex;
+    }
+    /* Left chat area */
+    .left-panel {
+      flex: 3;
+      border: 2px solid black;
+      border-top: none;
+      background: white;
+    }
+    /* Right messages area */
+    .right-panel {
+      flex: 1;
+      border: 2px solid black;
+      border-top: none;
+      display: flex;
+      flex-direction: column;
+    }
+    .messages-header {
+      font-weight: bold;
+      padding: 10px;
+      border-bottom: 2px solid black;
+      text-align: center;
+    }
+    .messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: white;
+    }
+    .input-area {
+      display: flex;
+      border-top: 2px solid black;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+    .input-area button {
+      width: 80px;
+      background: black;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .input-area button:hover {
+      background: #444;
+    }
+  </style>
+</head>
+<body>
+  <!-- Title for Room Code -->
+  <div id="{{room_code}}" class="room-title">{{room_code}}</div>
+  <!-- Main content -->
+  <div class="main">
+    <!-- Left chat/drawing area -->
+    <div class="left-panel"></div>
+
+    <!-- Right message area -->
+    <div class="right-panel">
+      <div class="messages-header">Messages</div>
+      <div class="messages" id="chat-messages">
+        <!-- Messages will appear here -->
+      </div>
+      <div class="input-area">
+        <input type="text" placeholder="Type a message..." />
+        <button>Send</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
