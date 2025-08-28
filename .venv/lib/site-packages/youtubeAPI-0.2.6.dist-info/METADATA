@@ -1,0 +1,23 @@
+Metadata-Version: 2.1
+Name: youtubeAPI
+Version: 0.2.6
+Summary: Youtube Data, Analytics, Reporting API
+Home-page: https://github.com/tjmoon0104/youtubeAPI
+Author: taejun
+Author-email: tjmoon0104@outlook.com
+License: MIT
+Download-URL: https://github.com/jeakwon/ccpy/archive/0.0.tar.gz
+Keywords: youtubeAPI
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Requires-Python: >=3
+
+UNKNOWN
+
+
