@@ -2,11 +2,14 @@ from flask import Flask,request
 import random
 from flask import render_template
 from flask_socketio import join_room,leave_room,SocketIO,send,emit
+import eventlet
+
+eventlet.monkey_patch()
 
 #initialization of flask and socketio
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='eventlet')
 
 rooms={} #rooms dictionary temp
 
@@ -58,4 +61,4 @@ def handle_disconnect():
 
 
 if __name__ == '__main__':
-    socketio.run(app,debug=True)
+    socketio.run(app,host='0.0.0.0', port=5000)
