@@ -9,7 +9,7 @@ eventlet.monkey_patch()
 #initialization of flask and socketio
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode='eventlet')
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 rooms={} #rooms dictionary temp
 
