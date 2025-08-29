@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Room</title>
-  <link rel="style" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css">
   <style>
     * {
       margin: 0;
@@ -85,7 +87,7 @@
 </head>
 <body>
   <!-- Title for Room Code -->
-  <div id="{{room_code}}" class="room-title">{{room_code}}</div>
+  <div id="{{room_code}}" class="room-title">{{room_code}}<br>{{username}}</div>
   <!-- Main content -->
   <div class="main">
     <!-- Left chat/drawing area -->
@@ -94,14 +96,44 @@
     <!-- Right message area -->
     <div class="right-panel">
       <div class="messages-header">Messages</div>
-      <div class="messages" id="chat-messages">
+      <div class="messages" id="chatBox">
         <!-- Messages will appear here -->
       </div>
       <div class="input-area">
-        <input type="text" placeholder="Type a message..." />
-        <button>Send</button>
+        <input id = "msgInput" type="text" placeholder="Type a message..." />
+        <button id="sendBtn">Send</button>
       </div>
     </div>
   </div>
+  <script>
+    const socket=io();
+    const username = "{{username}}";
+    const room = "{{room_code}}";
+
+    socket.emit('join_room',{username:username,room:room});
+    document.getElementById('sendBtn').onclick = () => {
+    const msg = document.getElementById('msgInput').value.trim();
+    console.log("Trying to send:", msg, "to room:", room, "as:", username);
+    if (msg) {
+        socket.emit('send_message', { username: username, room: room, msg: msg });
+        document.getElementById('msgInput').value = '';
+    }
+};
+
+    // document.getElementById('sendBtn').onclick = () => {
+    //   const msg = document.getElementById('msgInput').value;
+    //   if(msg.trim()){
+    //     console.log(msg);
+    //     socket.emit('send_message',{username:username,room:room,msg:msg});
+    //     document.getElementById('msgInput').value='';
+    //   }
+    // };
+
+    socket.on('message',data => {
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML += `<p>${data.msg}</p>`;
+      chatBox.scrollTop= chatBox.scrollHeight;
+    }); 
+  </script>
 </body>
 </html>
