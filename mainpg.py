@@ -9,9 +9,10 @@ eventlet.monkey_patch()
 #initialization of flask and socketio
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+socketio = SocketIO(app), async_mode='eventlet', cors_allowed_origins="*")
 
 rooms={} #rooms dictionary temp
+user_sessions = {}#for session ids
 
 
 def random_room_generator():
@@ -47,6 +48,8 @@ def room():
 def handle_join(data):
     username = data['username']
     room = data['room']
+    sid = request.sid
+    user_sessions[sid] = {'username': username, 'room': room}
     join_room(room)
     emit('message',{'msg':f'{username} has entered the room'},room=room)
 @socketio.on("send_message")
@@ -57,7 +60,27 @@ def send_message(data):
     emit('message',{'msg':f'{username}: {msg}'},room=room)
 @socketio.on("disconnect")
 def handle_disconnect():
-    print('user disconnected')
+    sid = request.sid
+
+    if sid in user_sessions:
+        username = user_sessions[sid]['username']
+        room = user_sessions[sid]['room']
+
+        # Remove user from room
+        if room in rooms and username in rooms[room]:
+            rooms[room].remove(username)
+
+            emit('message', {'msg': f'{username} has left the room'}, room=room)
+            print(f"{username} left room {room}")
+
+            # If the room becomes empty, delete it
+            if not rooms[room]:
+                del rooms[room]
+
+        # Remove SID from sessions
+        del user_sessions[sid]
+
+    print('A user disconnected')
 
 
 if __name__ == '__main__':
