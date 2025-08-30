@@ -1,140 +1,338 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Room</title>
-  <link rel="stylesheet" href="/static/style.css">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #f9f9f9;
-    }
-    /* Title bar */
-    .room-title {
-      font-size: 28px;
-      font-weight: bold;
-      text-align: left;
-      padding: 10px 20px;
-      border-bottom: 2px solid black;
-      background: white;
-    }
-    /* Main container with chat area and messages */
-    .main {
-      flex: 1;
-      display: flex;
-    }
-    /* Left chat area */
-    .left-panel {
-      flex: 3;
-      border: 2px solid black;
-      border-top: none;
-      background: white;
-    }
-    /* Right messages area */
-    .right-panel {
-      flex: 1;
-      border: 2px solid black;
-      border-top: none;
-      display: flex;
-      flex-direction: column;
-    }
-    .messages-header {
-      font-weight: bold;
-      padding: 10px;
-      border-bottom: 2px solid black;
-      text-align: center;
-    }
-    .messages {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      background: white;
-    }
-    .input-area {
-      display: flex;
-      border-top: 2px solid black;
-    }
-    .input-area input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      outline: none;
-      font-size: 16px;
-    }
-    .input-area button {
-      width: 80px;
-      background: black;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .input-area button:hover {
-      background: #444;
-    }
-  </style>
-</head>
-<body>
-  <!-- Title for Room Code -->
-  <div id="{{room_code}}" class="room-title">{{room_code}}<br>{{username}}</div>
-  <!-- Main content -->
-  <div class="main">
-    <!-- Left chat/drawing area -->
-    <div class="left-panel"></div>
+  <head>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Room</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: #f9f9f9;
+      }
+      /* Title bar */
+      .room-title {
+        font-size: 28px;
+        font-weight: bold;
+        text-align: left;
+        padding: 10px 20px;
+        border-bottom: 2px solid black;
+        background: white;
+      }
+      /* Main container with chat area and messages */
+      .main {
+        flex: 1;
+        display: flex;
+      }
+      /* Left chat area */
+      .left-panel {
+        flex: 3;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border-right: 1px solid #dddfe2;
+        padding: 20px;
+      }
+      /* Controls container */
+      .video-controls {
+        display: flex;
+        justify-content: center; /* This centers the items horizontally */
+        align-items: center; /* This aligns items vertically */
+        gap: 10px;
+        margin-bottom: 20px;
+      }
 
-    <!-- Right message area -->
-    <div class="right-panel">
-      <div class="messages-header">Messages</div>
-      <div class="messages" id="chatBox">
-        <!-- Messages will appear here -->
+      .video-controls input {
+        flex-grow: 1;
+        max-width: 500px; /* Constrain the width of the input field */
+        padding: 10px 15px;
+        font-size: 16px;
+        border-radius: 6px;
+        border: 1px solid #ccd0d5;
+        outline: none;
+      }
+      .video-controls input:focus {
+        border-color: #1877f2;
+        box-shadow: 0 0 0 2px #e7f3ff;
+      }
+
+      .video-controls button {
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background-color: #1877f2;
+        color: white;
+        transition: background-color 0.2s;
+      }
+      .video-controls button:hover {
+        background-color: #166fe5;
+      }
+
+      /* YouTube player container */
+      .video-player-container {
+        flex-grow: 1;
+        width: 100%;
+        background-color: #000;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      /* NEW: Placeholder for the YouTube API to inject the player */
+      #player {
+        width: 100%;
+        height: 100%;
+      }
+      .video-player-container .placeholder-text {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      /* Right messages area */
+      .right-panel {
+        flex: 1;
+        border: 2px solid black;
+        border-top: none;
+        display: flex;
+        flex-direction: column;
+      }
+      .messages-header {
+        font-weight: bold;
+        padding: 10px;
+        border-bottom: 2px solid black;
+        text-align: center;
+      }
+      .messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+      }
+      .input-area {
+        display: flex;
+        border-top: 1px solid #dddfe2;
+        padding: 10px;
+      }
+      .input-area input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccd0d5;
+        border-radius: 18px;
+        outline: none;
+        margin-right: 10px;
+      }
+      .input-area button {
+        width: 80px;
+        background: #1877f2;
+        color: white;
+        border: none;
+        border-radius: 18px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .input-area button:hover {
+        background: #166fe5;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Title for Room Code -->
+    <div id="{{room_code}}" class="room-title">
+      {{room_code}}<br />{{username}}
+    </div>
+    <!-- Main content -->
+    <div class="main">
+      <!-- Left chat/drawing area -->
+      <div class="left-panel">
+        <div class="video-controls">
+          <input
+            type="text"
+            id="video-input"
+            placeholder="Enter search keyword or YouTube URL" />
+          <button id="search-btn">Search</button>
+          <button id="play-url-btn">Play URL</button>
+        </div>
+        <div class="video-player-container">
+          <!-- The iframe is replaced by this div -->
+          <div id="player">
+            <div class="placeholder-text">Search for a video to begin</div>
+          </div>
+        </div>
       </div>
-      <div class="input-area">
-        <input id = "msgInput" type="text" placeholder="Type a message..." />
-        <button id="sendBtn">Send</button>
+      <!-- Right message area -->
+      <div class="right-panel">
+        <div class="messages-header">Messages</div>
+        <div class="messages" id="chatBox">
+          <!-- Messages will appear here -->
+        </div>
+        <div class="input-area">
+          <input id="msgInput" type="text" placeholder="Type a message..." />
+          <button id="sendBtn">Send</button>
+        </div>
       </div>
     </div>
-  </div>
-  <script>
-    const socket=io("https://web-production-70a4.up.railway.app");   //This is used only when pushing to website
-    //const socket=io();   //used when working locally on your pc
-    const username = "{{username}}";
-    const room = "{{room_code}}";
 
-    socket.emit('join_room',{username:username,room:room});
-    document.getElementById('sendBtn').onclick = () => {
-    const msg = document.getElementById('msgInput').value.trim();
-    console.log("Trying to send:", msg, "to room:", room, "as:", username);
-    if (msg) {
-        socket.emit('send_message', { username: username, room: room, msg: msg });
-        document.getElementById('msgInput').value = '';
-    }
-};
+    <!-- YouTube IFrame API script -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+      const socket = io();
 
-    // document.getElementById('sendBtn').onclick = () => {
-    //   const msg = document.getElementById('msgInput').value;
-    //   if(msg.trim()){
-    //     console.log(msg);
-    //     socket.emit('send_message',{username:username,room:room,msg:msg});
-    //     document.getElementById('msgInput').value='';
-    //   }
-    // };
+      const videoInput = document.getElementById("video-input");
+      const searchBtn = document.getElementById("search-btn");
+      const playUrlBtn = document.getElementById("play-url-btn");
+      const username = "{{username}}";
+      const room = "{{room_code}}";
 
-    socket.on('message',data => {
-      const chatBox = document.getElementById('chatBox');
-      chatBox.innerHTML += `<p>${data.msg}</p>`;
-      chatBox.scrollTop= chatBox.scrollHeight;
-    }); 
-  </script>
-</body>
+      // --- NEW: Variables for the YouTube Player ---
+      let player; // This will hold the YouTube player object
+      let isReceivingEvent = false; // A flag to prevent sending echo events
+
+      searchBtn.addEventListener("click", () => {
+        const query = videoInput.value.trim();
+        if (query) {
+          socket.emit("search_video", { query: query });
+        }
+      });
+      playUrlBtn.addEventListener("click", () => {
+        const url = videoInput.value.trim();
+        if (url) {
+          socket.emit("play_from_url", { url: url });
+        }
+      });
+      videoInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          searchBtn.click();
+        }
+      });
+
+      socket.on("play_video", (data) => {
+        const videoId = data.video_id;
+        if (videoId) {
+          // Instead of changing src, we now use the API to create/load the video
+          createPlayer(videoId);
+        }
+      });
+
+      socket.on("error", (data) => {
+        console.error("Server error:", data.message);
+        alert("Error: " + data.message);
+      });
+
+      socket.emit("join_room", { username: username, room: room });
+      document.getElementById("sendBtn").onclick = () => {
+        const msg = document.getElementById("msgInput").value.trim();
+        console.log("Trying to send:", msg, "to room:", room, "as:", username);
+        if (msg) {
+          socket.emit("send_message", {
+            username: username,
+            room: room,
+            msg: msg,
+          });
+          document.getElementById("msgInput").value = "";
+        }
+      };
+
+      socket.on("message", (data) => {
+        const chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML += `<p>${data.msg}</p>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+
+      // --- NEW FUNCTIONS FOR YOUTUBE SYNC ---
+
+      /**
+       * NEW FUNCTION: onYouTubeIframeAPIReady
+       * This function is required by the YouTube API. It is called automatically
+       * once the external API script has finished downloading.
+       */
+      function onYouTubeIframeAPIReady() {
+        console.log("YouTube API Ready");
+      }
+
+      /**
+       * NEW FUNCTION: createPlayer
+       * This function handles the creation and loading of the YouTube video player.
+       * If the player doesn't exist, it creates a new one. If it already exists,
+       * it just loads the new video into the current player.
+       * @param {string} videoId - The 11-character ID of the YouTube video.
+       */
+      function createPlayer(videoId) {
+        if (player) {
+          player.loadVideoById(videoId);
+        } else {
+          player = new YT.Player("player", {
+            height: "100%",
+            width: "100%",
+            videoId: videoId,
+            playerVars: { autoplay: 1, controls: 1 },
+            events: {
+              onReady: onPlayerReady,
+              onStateChange: onPlayerStateChange,
+            },
+          });
+        }
+      }
+
+      /**
+       * NEW FUNCTION: onPlayerReady
+       * This function is a required callback from the YouTube API. It fires
+       * when the video player is fully loaded and ready to receive commands.
+       */
+      function onPlayerReady(event) {
+        console.log("Player is ready to play.");
+      }
+
+      /**
+       * NEW FUNCTION: onPlayerStateChange
+       * This is the core function for synchronization. It is called by the API
+       * whenever the player's state changes (e.g., playing, paused, ended).
+       * It emits a 'video_event' to the server to be broadcasted to others.
+       */
+      function onPlayerStateChange(event) {
+        if (isReceivingEvent) {
+          return; // Do nothing if this change was triggered by another user
+        }
+        if (event.data === YT.PlayerState.PLAYING) {
+          socket.emit("video_event", { event: "play" });
+        } else if (event.data === YT.PlayerState.PAUSED) {
+          socket.emit("video_event", { event: "pause" });
+        }
+      }
+
+      /**
+       * NEW SOCKET.IO LISTENER: 'video_event'
+       * This listens for playback events broadcasted from the server.
+       * When an event is received, it controls the local player accordingly.
+       */
+      socket.on("video_event", (data) => {
+        if (!player) return;
+
+        isReceivingEvent = true; // Set a flag to ignore the onPlayerStateChange event this will trigger
+
+        if (data.event === "play") {
+          player.playVideo();
+        } else if (data.event === "pause") {
+          player.pauseVideo();
+        }
+
+        // Reset the flag after a short delay to allow the player to update
+        setTimeout(() => {
+          isReceivingEvent = false;
+        }, 100);
+      });
+    </script>
+  </body>
 </html>
