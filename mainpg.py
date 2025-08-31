@@ -2,6 +2,7 @@ from flask import Flask,request
 import random
 import re
 import time
+import eventlet
 from flask import render_template
 from flask_socketio import join_room,leave_room,SocketIO,send,emit
 from googleapiclient.discovery import build
@@ -14,9 +15,10 @@ YOUTUBE_API_VERSION = "v3"
 
 
 #initialization of flask and socketio
+eventlet.monkey_patch()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+socketio = SocketIO(app,async_mode='eventlet', cors_allowed_origins="*")
 
 rooms={} #rooms dictionary temp
 user_sessions = {}#for session ids
