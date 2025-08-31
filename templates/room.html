@@ -4,158 +4,220 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat Room</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <title>Watch Party</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet" />
     <style>
+      :root {
+        --background-primary: #121212;
+        --background-secondary: #1e1e1e;
+        --background-tertiary: #2c2c2c;
+        --primary-accent: #3a82f7;
+        --primary-accent-hover: #5a9bff;
+        --text-primary: #eaeaea;
+        --text-secondary: #a0a0a0;
+        --border-color: #333333;
+      }
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
       body {
-        font-family: Arial, sans-serif;
+        font-family: "Poppins", sans-serif;
         height: 100vh;
         display: flex;
         flex-direction: column;
-        background: #f9f9f9;
+        background: var(--background-primary);
+        color: var(--text-primary);
+        overflow: hidden; /* Prevent scrolling on the body */
       }
-      /* Title bar */
       .room-title {
-        font-size: 28px;
-        font-weight: bold;
+        font-size: 20px;
+        font-weight: 500;
         text-align: left;
-        padding: 10px 20px;
-        border-bottom: 2px solid black;
-        background: white;
+        padding: 12px 24px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--background-secondary);
+        flex-shrink: 0; /* Prevent the header from shrinking */
       }
-      /* Main container with chat area and messages */
       .main {
         flex: 1;
         display: flex;
+        gap: 16px;
+        padding: 16px;
+        overflow: hidden; /* Prevent this container from causing scrollbars */
       }
-      /* Left chat area */
-      .left-panel {
-        flex: 3;
+      .left-panel,
+      .right-panel {
+        background: var(--background-secondary);
+        border-radius: 12px;
         display: flex;
         flex-direction: column;
-        background: #ffffff;
-        border-right: 1px solid #dddfe2;
+        border: 1px solid var(--border-color);
+        overflow: hidden; /* Ensure content stays within the rounded corners */
+      }
+      .left-panel {
+        flex: 3;
         padding: 20px;
       }
-      /* Controls container */
       .video-controls {
         display: flex;
-        justify-content: center; /* This centers the items horizontally */
-        align-items: center; /* This aligns items vertically */
-        gap: 10px;
+        align-items: center;
+        gap: 12px;
         margin-bottom: 20px;
       }
-
       .video-controls input {
         flex-grow: 1;
-        max-width: 500px; /* Constrain the width of the input field */
-        padding: 10px 15px;
-        font-size: 16px;
-        border-radius: 6px;
-        border: 1px solid #ccd0d5;
+        background: var(--background-tertiary);
+        color: var(--text-primary);
+        padding: 12px 18px;
+        font-size: 15px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
         outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
       }
       .video-controls input:focus {
-        border-color: #1877f2;
-        box-shadow: 0 0 0 2px #e7f3ff;
+        border-color: var(--primary-accent);
+        box-shadow: 0 0 0 3px rgba(58, 130, 247, 0.3);
       }
-
       .video-controls button {
-        padding: 10px 20px;
-        font-size: 16px;
+        padding: 12px 22px;
+        font-size: 15px;
         font-weight: 600;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
-        background-color: #1877f2;
+        background-color: var(--primary-accent);
         color: white;
         transition: background-color 0.2s;
       }
       .video-controls button:hover {
-        background-color: #166fe5;
+        background-color: var(--primary-accent-hover);
       }
-
-      /* YouTube player container */
       .video-player-container {
         flex-grow: 1;
         width: 100%;
         background-color: #000;
-        border-radius: 8px;
+        border-radius: 12px;
         overflow: hidden;
+        min-height: 200px; /* Give it a minimum height to prevent collapse */
       }
-      /* NEW: Placeholder for the YouTube API to inject the player */
-      #player {
+      #youtube-player-div {
         width: 100%;
         height: 100%;
+        border: none;
       }
-      .video-player-container .placeholder-text {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-      }
-
-      /* Right messages area */
       .right-panel {
         flex: 1;
-        border: 2px solid black;
-        border-top: none;
-        display: flex;
-        flex-direction: column;
       }
       .messages-header {
-        font-weight: bold;
-        padding: 10px;
-        border-bottom: 2px solid black;
+        font-weight: 600;
+        font-size: 18px;
+        padding: 16px;
+        border-bottom: 1px solid var(--border-color);
         text-align: center;
+        flex-shrink: 0;
       }
       .messages {
         flex: 1;
-        padding: 10px;
+        padding: 16px;
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .messages::-webkit-scrollbar {
+        width: 8px;
+      }
+      .messages::-webkit-scrollbar-track {
+        background: var(--background-secondary);
+      }
+      .messages::-webkit-scrollbar-thumb {
+        background: var(--background-tertiary);
+        border-radius: 4px;
+      }
+      .messages::-webkit-scrollbar-thumb:hover {
+        background: #555;
       }
       .input-area {
         display: flex;
-        border-top: 1px solid #dddfe2;
-        padding: 10px;
+        border-top: 1px solid var(--border-color);
+        padding: 12px;
+        gap: 10px;
+        flex-shrink: 0;
       }
       .input-area input {
         flex: 1;
-        padding: 10px;
-        border: 1px solid #ccd0d5;
-        border-radius: 18px;
+        padding: 12px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
         outline: none;
-        margin-right: 10px;
+        background: var(--background-tertiary);
+        color: var(--text-primary);
+        font-size: 15px;
       }
       .input-area button {
         width: 80px;
-        background: #1877f2;
+        background: var(--primary-accent);
         color: white;
         border: none;
-        border-radius: 18px;
+        border-radius: 20px;
         cursor: pointer;
         font-weight: bold;
+        transition: background-color 0.2s;
       }
       .input-area button:hover {
-        background: #166fe5;
+        background: var(--primary-accent-hover);
+      }
+
+      /* --- RESPONSIVE DESIGN FOR MOBILE & TABLET --- */
+      @media (max-width: 900px) {
+        body {
+          overflow: auto; /* Allow scrolling on the body for mobile */
+        }
+        .main {
+          flex-direction: column; /* Stack panels vertically */
+          padding: 8px;
+          gap: 8px;
+          height: auto;
+        }
+        .left-panel,
+        .right-panel {
+          flex: none; /* Disable flex-grow */
+          width: 100%;
+        }
+        .left-panel {
+          height: 60vh; /* Assign a viewport height percentage */
+          padding: 12px;
+        }
+        .right-panel {
+          height: 40vh; /* Assign a viewport height percentage */
+        }
+        .room-title {
+          font-size: 16px;
+          padding: 12px 16px;
+        }
+        .video-controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .video-controls input,
+        .video-controls button {
+          width: 100%;
+        }
       }
     </style>
   </head>
   <body>
-    <!-- Title for Room Code -->
     <div id="{{room_code}}" class="room-title">
-      {{room_code}}<br />{{username}}
+      <strong>Room:</strong> {{room_code}} | <strong>User:</strong> {{username}}
     </div>
-    <!-- Main content -->
     <div class="main">
-      <!-- Left chat/drawing area -->
       <div class="left-panel">
         <div class="video-controls">
           <input
@@ -166,18 +228,12 @@
           <button id="play-url-btn">Play URL</button>
         </div>
         <div class="video-player-container">
-          <!-- The iframe is replaced by this div -->
-          <div id="player">
-            <div class="placeholder-text">Search for a video to begin</div>
-          </div>
+          <div id="youtube-player-div"></div>
         </div>
       </div>
-      <!-- Right message area -->
       <div class="right-panel">
-        <div class="messages-header">Messages</div>
-        <div class="messages" id="chatBox">
-          <!-- Messages will appear here -->
-        </div>
+        <div class="messages-header">Chat</div>
+        <div class="messages" id="chatBox"></div>
         <div class="input-area">
           <input id="msgInput" type="text" placeholder="Type a message..." />
           <button id="sendBtn">Send</button>
@@ -185,45 +241,126 @@
       </div>
     </div>
 
-    <!-- YouTube IFrame API script -->
-    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-      const socket=io("https://web-production-70a4.up.railway.app");
-
+      const socket = io();
       const videoInput = document.getElementById("video-input");
       const searchBtn = document.getElementById("search-btn");
       const playUrlBtn = document.getElementById("play-url-btn");
       const username = "{{username}}";
       const room = "{{room_code}}";
 
-      // --- NEW: Variables for the YouTube Player ---
-      let player; // This will hold the YouTube player object
-      let isReceivingEvent = false; // A flag to prevent sending echo events
+      let player;
+      let isLocalEvent = true;
+      let isPlayerReady = false;
+      let initialVideoData = null;
+
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player("youtube-player-div", {
+          height: "100%",
+          width: "100%",
+          playerVars: { autoplay: 1, controls: 1, modestbranding: 1, rel: 0 },
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+          },
+        });
+      }
+
+      function onPlayerReady(event) {
+        console.log("YouTube Player is ready.");
+        isPlayerReady = true;
+        if (initialVideoData) {
+          console.log("Loading stored initial video data.");
+          playVideoFromServer(initialVideoData);
+          initialVideoData = null;
+        }
+        setInterval(syncTimeWithServer, 3000);
+      }
+
+      function onPlayerStateChange(event) {
+        if (!isLocalEvent) return;
+        const state = event.data;
+        const currentTime = player.getCurrentTime();
+        if (state === YT.PlayerState.PLAYING) {
+          socket.emit("video_event", { event: "play", time: currentTime });
+        } else if (state === YT.PlayerState.PAUSED) {
+          socket.emit("video_event", { event: "pause", time: currentTime });
+        }
+      }
+
+      function syncTimeWithServer() {
+        if (
+          player &&
+          typeof player.getPlayerState === "function" &&
+          player.getPlayerState() === YT.PlayerState.PLAYING
+        ) {
+          const currentTime = player.getCurrentTime();
+          socket.emit("sync_time", { time: currentTime });
+        }
+      }
 
       searchBtn.addEventListener("click", () => {
         const query = videoInput.value.trim();
-        if (query) {
-          socket.emit("search_video", { query: query });
-        }
+        if (query) socket.emit("search_video", { query: query });
       });
+
       playUrlBtn.addEventListener("click", () => {
         const url = videoInput.value.trim();
-        if (url) {
-          socket.emit("play_from_url", { url: url });
-        }
+        if (url) socket.emit("play_from_url", { url: url });
       });
-      videoInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          searchBtn.click();
+
+      function playVideoFromServer(data) {
+        isLocalEvent = false;
+        const videoId = data.video_id;
+        const startTime = data.start_time || 0;
+        const state = data.state;
+
+        if (player && typeof player.loadVideoById === "function" && videoId) {
+          player.loadVideoById({ videoId: videoId, startSeconds: startTime });
+
+          if (state === "paused") {
+            setTimeout(() => {
+              player.pauseVideo();
+              isLocalEvent = true;
+            }, 1000);
+          } else {
+            setTimeout(() => {
+              isLocalEvent = true;
+            }, 500);
+          }
+        }
+      }
+
+      socket.on("play_video", (data) => {
+        if (isPlayerReady) {
+          playVideoFromServer(data);
+        } else {
+          console.log("Player not ready. Storing video data to play later.");
+          initialVideoData = data;
         }
       });
 
-      socket.on("play_video", (data) => {
-        const videoId = data.video_id;
-        if (videoId) {
-          // Instead of changing src, we now use the API to create/load the video
-          createPlayer(videoId);
+      socket.on("video_event", (data) => {
+        isLocalEvent = false;
+        const event = data.event;
+        const time = data.time;
+
+        if (player && typeof player.seekTo === "function") {
+          player.seekTo(time, true);
+          if (event === "play") {
+            player.playVideo();
+          } else if (event === "pause") {
+            player.pauseVideo();
+          }
         }
+        setTimeout(() => {
+          isLocalEvent = true;
+        }, 500);
       });
 
       socket.on("error", (data) => {
@@ -231,107 +368,70 @@
         alert("Error: " + data.message);
       });
 
+      const userColors = [
+        "#FFAB91",
+        "#81D4FA",
+        "#A5D6A7",
+        "#CE93D8",
+        "#F48FB1",
+        "#FFE082",
+        "#80CBC4",
+        "#FBC02D",
+        "#039BE5",
+        "#43A047",
+      ];
+      function getUserColor(username) {
+        let hash = 0;
+        for (let i = 0; i < username.length; i++) {
+          hash = username.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash % userColors.length);
+        return userColors[index];
+      }
+
       socket.emit("join_room", { username: username, room: room });
       document.getElementById("sendBtn").onclick = () => {
         const msg = document.getElementById("msgInput").value.trim();
-        console.log("Trying to send:", msg, "to room:", room, "as:", username);
         if (msg) {
-          socket.emit("send_message", {
-            username: username,
-            room: room,
-            msg: msg,
-          });
+          socket.emit("send_message", { username, room, msg });
           document.getElementById("msgInput").value = "";
         }
       };
+      document
+        .getElementById("msgInput")
+        .addEventListener("keydown", (event) => {
+          if (event.key === "Enter") document.getElementById("sendBtn").click();
+        });
 
       socket.on("message", (data) => {
         const chatBox = document.getElementById("chatBox");
-        chatBox.innerHTML += `<p>${data.msg}</p>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-      });
+        const msg = data.msg;
+        const p = document.createElement("p");
 
-      // --- NEW FUNCTIONS FOR YOUTUBE SYNC ---
+        const colonIndex = msg.indexOf(":");
+        const isUserMessage =
+          colonIndex > -1 &&
+          !msg.endsWith("has entered the room") &&
+          !msg.endsWith("has left the room");
 
-      /**
-       * NEW FUNCTION: onYouTubeIframeAPIReady
-       * This function is required by the YouTube API. It is called automatically
-       * once the external API script has finished downloading.
-       */
-      function onYouTubeIframeAPIReady() {
-        console.log("YouTube API Ready");
-      }
+        if (isUserMessage) {
+          const senderUsername = msg.substring(0, colonIndex);
+          const messageText = msg.substring(colonIndex + 1);
 
-      /**
-       * NEW FUNCTION: createPlayer
-       * This function handles the creation and loading of the YouTube video player.
-       * If the player doesn't exist, it creates a new one. If it already exists,
-       * it just loads the new video into the current player.
-       * @param {string} videoId - The 11-character ID of the YouTube video.
-       */
-      function createPlayer(videoId) {
-        if (player) {
-          player.loadVideoById(videoId);
+          const usernameSpan = document.createElement("strong");
+          usernameSpan.style.color = getUserColor(senderUsername);
+          usernameSpan.textContent = senderUsername + ":";
+
+          p.appendChild(usernameSpan);
+          p.appendChild(document.createTextNode(messageText));
         } else {
-          player = new YT.Player("player", {
-            height: "100%",
-            width: "100%",
-            videoId: videoId,
-            playerVars: { autoplay: 1, controls: 1 },
-            events: {
-              onReady: onPlayerReady,
-              onStateChange: onPlayerStateChange,
-            },
-          });
-        }
-      }
-
-      /**
-       * NEW FUNCTION: onPlayerReady
-       * This function is a required callback from the YouTube API. It fires
-       * when the video player is fully loaded and ready to receive commands.
-       */
-      function onPlayerReady(event) {
-        console.log("Player is ready to play.");
-      }
-
-      /**
-       * NEW FUNCTION: onPlayerStateChange
-       * This is the core function for synchronization. It is called by the API
-       * whenever the player's state changes (e.g., playing, paused, ended).
-       * It emits a 'video_event' to the server to be broadcasted to others.
-       */
-      function onPlayerStateChange(event) {
-        if (isReceivingEvent) {
-          return; // Do nothing if this change was triggered by another user
-        }
-        if (event.data === YT.PlayerState.PLAYING) {
-          socket.emit("video_event", { event: "play" });
-        } else if (event.data === YT.PlayerState.PAUSED) {
-          socket.emit("video_event", { event: "pause" });
-        }
-      }
-
-      /**
-       * NEW SOCKET.IO LISTENER: 'video_event'
-       * This listens for playback events broadcasted from the server.
-       * When an event is received, it controls the local player accordingly.
-       */
-      socket.on("video_event", (data) => {
-        if (!player) return;
-
-        isReceivingEvent = true; // Set a flag to ignore the onPlayerStateChange event this will trigger
-
-        if (data.event === "play") {
-          player.playVideo();
-        } else if (data.event === "pause") {
-          player.pauseVideo();
+          p.textContent = msg;
+          p.style.fontStyle = "italic";
+          p.style.color = "var(--text-secondary)";
         }
 
-        // Reset the flag after a short delay to allow the player to update
-        setTimeout(() => {
-          isReceivingEvent = false;
-        }, 100);
+        chatBox.appendChild(p);
+        chatBox.scrollTop = chatBox.scrollHeight;
       });
     </script>
   </body>
