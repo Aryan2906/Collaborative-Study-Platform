@@ -1,7 +1,7 @@
 from flask import Flask,request
 import random
 import re
-import eventlet
+import time
 from flask import render_template
 from flask_socketio import join_room,leave_room,SocketIO,send,emit
 from googleapiclient.discovery import build
@@ -14,10 +14,9 @@ YOUTUBE_API_VERSION = "v3"
 
 
 #initialization of flask and socketio
-eventlet.monkey_patch()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app,async_mode='eventlet', cors_allowed_origins="*")
+socketio = SocketIO(app)
 
 rooms={} #rooms dictionary temp
 user_sessions = {}#for session ids
@@ -85,14 +84,23 @@ def room():
 
     if action == "Create":
         room_code=random_room_generator()
-        rooms[room_code]=[]
-    if action == "Join" and room_code not in rooms:
-        print(room_code)
-        return "Room not found",404
-    if action == "Join" and username not in rooms[room_code]:
-        rooms[room_code].append(username)
+        # Store room state and add the creator to the user list immediately.
+        rooms[room_code] = {'users': [username], 'current_video': None}
+
+    elif action == "Join":
+        if room_code not in rooms:
+            return "Room not found", 404
+        # Prevent users with duplicate usernames from joining the same room.
+        if username in rooms[room_code]['users']:
+            return f"Username '{username}' is already taken in room {room_code}. Please go back and choose a different name.", 409
+        rooms[room_code]['users'].append(username)
+    
+    else:
+        return "Invalid action. Please Create or Join a room.", 400
+
     print(rooms)
     return render_template('room.html',username=username,room_code=room_code)
+
 
 @socketio.on('join_room')
 def handle_join(data):
@@ -102,6 +110,20 @@ def handle_join(data):
     user_sessions[sid] = {'username': username, 'room': room}
     join_room(room)
     emit('message',{'msg':f'{username} has entered the room'},room=room)
+    if room in rooms and rooms[room].get('current_video'):
+        video_state = rooms[room]['current_video']
+        start_time = video_state['time']
+
+        # If the video was playing, calculate how far along it should be now.
+        if video_state['state'] == 'playing':
+            time_since_update = time.time() - video_state['last_update']
+            start_time += time_since_update
+
+        emit('play_video', {
+            'video_id': video_state['id'], 
+            'start_time': start_time,
+            'state': video_state['state']
+        }, to=sid)
 
 @socketio.on("send_message")
 def send_message(data):
@@ -109,6 +131,13 @@ def send_message(data):
     room = data['room']
     msg = data['msg']
     emit('message',{'msg':f'{username}: {msg}'},room=room)
+def update_video_state(room, video_id):
+    rooms[room]['current_video'] = {
+        'id': video_id,
+        'state': 'playing',
+        'time': 0,
+        'last_update': time.time()
+    }
 
 # --- New SocketIO Handlers for YouTube ---
 @socketio.on("search_video")
@@ -117,7 +146,9 @@ def handle_search_video(data):
     room = user_sessions[request.sid]['room'] # Get room from session
     video_id, error = get_video_id_from_search(query)
     if video_id:
-        emit("play_video", {"video_id": video_id}, to=room)
+        emit("play_video", {"video_id": video_id, "start_time": 0}, to=room)
+        if room in rooms:
+            update_video_state(room, video_id)
     else:
         emit("error", {"message": error or "Could not find video."})
 
@@ -127,21 +158,33 @@ def handle_play_from_url(data):
     room = user_sessions[request.sid]['room'] # Get room from session
     video_id = get_video_id_from_url(url)
     if video_id:
-        emit("play_video", {"video_id": video_id}, to=room)
+        emit("play_video", {"video_id": video_id, "start_time": 0}, to=room)
+        if room in rooms:
+            update_video_state(room, video_id)
     else:
         emit("error", {"message": "Invalid YouTube URL provided."})
 
 @socketio.on("video_event")
 def handle_video_event(data):
-    """
-    Handles video playback events (like play/pause) and broadcasts them.
-    """
-    event = data.get("event")
     room = user_sessions.get(request.sid, {}).get('room')
-    if room:
-        emit("video_event", data, to=room, skip_sid=request.sid)
-        print(f"Broadcasting event '{event}' to room '{room}'")
+    if room in rooms and rooms[room]['current_video']:
+        event = data.get("event") # 'play' or 'pause'
+        current_time = data.get("time", 0)
+        
+        # Update the server's state record
+        rooms[room]['current_video']['state'] = 'playing' if event == 'play' else 'paused'
+        rooms[room]['current_video']['time'] = current_time
+        rooms[room]['current_video']['last_update'] = time.time()
 
+        emit("video_event", data, to=room, skip_sid=request.sid)
+
+@socketio.on("sync_time")
+def handle_sync_time(data):
+    """NEW function to receive time updates from the clients."""
+    room = user_sessions.get(request.sid, {}).get('room')
+    if room in rooms and rooms[room].get('current_video'):
+        rooms[room]['current_video']['time'] = data.get('time', 0)
+        rooms[room]['current_video']['last_update'] = time.time()
 
 
 @socketio.on("disconnect")
@@ -153,16 +196,18 @@ def handle_disconnect():
         room = user_sessions[sid]['room']
 
         # Remove user from room
-        if room in rooms and username in rooms[room]:
-            rooms[room].remove(username)
+        if room in rooms and username in rooms[room]['users']:
+            rooms[room]['users'].remove(username)
 
             emit('message', {'msg': f'{username} has left the room'}, room=room)
             print(f"{username} left room {room}")
 
             # If the room becomes empty, delete it
-            if not rooms[room]:
+            if not rooms[room]['users']:
                 del rooms[room]
-
+                print(f"Room {room} is empty and has been deleted.")
+            else:
+                print(f"Room {room} is NOT empty. It will not be deleted.")
         # Remove SID from sessions
         del user_sessions[sid]
 
