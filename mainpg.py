@@ -4,7 +4,7 @@ import time
 import random
 import re
 import eventlet
-
+from google.oauth2 import service_account
 from flask import Flask, request, render_template, session, redirect, url_for, flash
 from flask_socketio import join_room, leave_room, SocketIO, emit
 from authlib.integrations.flask_client import OAuth
@@ -18,8 +18,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app,async_mode='eventlet', cors_allowed_origins="*")
 
-app.config['GOOGLE_CLIENT_ID'] = '1044932829529-iak5noatk41hn4u410vcmma7hgtqr19j.apps.googleusercontent.com'
-app.config['GOOGLE_CLIENT_SECRET'] = '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'
+app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
+app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
 
 oauth = OAuth(app)
 google = oauth.register(
@@ -37,12 +37,22 @@ google = oauth.register(
 )
 
 
-try:
 
-    db = firestore.Client.from_service_account_json('collabstudy-470813-8384764e26b5.json')
-    print("Successfully connected to Firestore using service account key.")
+try:
+    # Check if the production environment variable for the key exists
+    key_content_str = os.getenv('GCP_SERVICE_ACCOUNT_KEY')
+    if key_content_str:
+        # If it exists, load credentials from the environment variable (for web hosting)
+        key_content_json = json.loads(key_content_str)
+        credentials = service_account.Credentials.from_service_account_info(key_content_json)
+        db = firestore.Client(credentials=credentials)
+        print("Successfully connected to Firestore using environment variable.")
+    else:
+        # If not, fall back to using the local file (for local development)
+        db = firestore.Client.from_service_account_json('service_account_key.json')
+        print("Successfully connected to Firestore using local key file.")
 except Exception as e:
-    print("CRITICAL: Could not connect to Firestore. Ensure 'service_account_key.json' is present and valid.")
+    print("CRITICAL: Could not connect to Firestore.")
     print(e)
     db = None
 
