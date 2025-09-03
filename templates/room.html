@@ -4,7 +4,7 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Watch Party Room</title>
+    <title>Watch Party</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -20,7 +20,6 @@
         --text-primary: #eaeaea;
         --text-secondary: #a0a0a0;
         --border-color: #333333;
-        --online-color: #4caf50;
       }
       * {
         margin: 0;
@@ -34,7 +33,7 @@
         flex-direction: column;
         background: var(--background-primary);
         color: var(--text-primary);
-        overflow: hidden;
+        overflow: hidden; /* Prevent scrolling on the body */
       }
       .room-title {
         font-size: 20px;
@@ -43,14 +42,14 @@
         padding: 12px 24px;
         border-bottom: 1px solid var(--border-color);
         background: var(--background-secondary);
-        flex-shrink: 0;
+        flex-shrink: 0; /* Prevent the header from shrinking */
       }
       .main {
         flex: 1;
         display: flex;
         gap: 16px;
         padding: 16px;
-        overflow: hidden;
+        overflow: hidden; /* Prevent this container from causing scrollbars */
       }
       .left-panel,
       .right-panel {
@@ -59,7 +58,7 @@
         display: flex;
         flex-direction: column;
         border: 1px solid var(--border-color);
-        overflow: hidden;
+        overflow: hidden; /* Ensure content stays within the rounded corners */
       }
       .left-panel {
         flex: 3;
@@ -106,7 +105,7 @@
         background-color: #000;
         border-radius: 12px;
         overflow: hidden;
-        min-height: 200px;
+        min-height: 200px; /* Give it a minimum height to prevent collapse */
       }
       #youtube-player-div {
         width: 100%;
@@ -116,68 +115,14 @@
       .right-panel {
         flex: 1;
       }
-      .chat-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 16px;
-        border-bottom: 1px solid var(--border-color);
-        flex-shrink: 0;
-      }
       .messages-header {
         font-weight: 600;
         font-size: 18px;
-        padding: 16px 0;
+        padding: 16px;
+        border-bottom: 1px solid var(--border-color);
+        text-align: center;
+        flex-shrink: 0;
       }
-      .member-list-container {
-        position: relative;
-      }
-      #members-btn {
-        background: var(--background-tertiary);
-        color: var(--text-primary);
-        border: 1px solid var(--border-color);
-        padding: 6px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-family: "Poppins", sans-serif;
-        font-size: 14px;
-      }
-      #members-dropdown {
-        display: none; /* Hidden by default */
-        position: absolute;
-        right: 0;
-        top: 100%;
-        margin-top: 5px;
-        background: var(--background-tertiary);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        width: 200px;
-        padding: 10px;
-        z-index: 10;
-        max-height: 250px;
-        overflow-y: auto;
-      }
-      #members-dropdown.visible {
-        display: block;
-      }
-      #members-dropdown h4 {
-        font-size: 12px;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        margin-top: 10px;
-        margin-bottom: 5px;
-      }
-      #members-dropdown p {
-        padding: 5px;
-        border-radius: 4px;
-      }
-      .online-indicator {
-        color: var(--online-color);
-      }
-      .offline-indicator {
-        color: var(--text-secondary);
-      }
-
       .messages {
         flex: 1;
         padding: 16px;
@@ -230,27 +175,28 @@
         background: var(--primary-accent-hover);
       }
 
+      /* --- RESPONSIVE DESIGN FOR MOBILE & TABLET --- */
       @media (max-width: 900px) {
         body {
-          overflow: auto;
+          overflow: auto; /* Allow scrolling on the body for mobile */
         }
         .main {
-          flex-direction: column;
+          flex-direction: column; /* Stack panels vertically */
           padding: 8px;
           gap: 8px;
           height: auto;
         }
         .left-panel,
         .right-panel {
-          flex: none;
+          flex: none; /* Disable flex-grow */
           width: 100%;
         }
         .left-panel {
-          height: 60vh;
+          height: 60vh; /* Assign a viewport height percentage */
           padding: 12px;
         }
         .right-panel {
-          height: 40vh;
+          height: 40vh; /* Assign a viewport height percentage */
         }
         .room-title {
           font-size: 16px;
@@ -286,15 +232,7 @@
         </div>
       </div>
       <div class="right-panel">
-        <div class="chat-header">
-          <div class="messages-header">Chat</div>
-          <div class="member-list-container">
-            <button id="members-btn">Members</button>
-            <div id="members-dropdown">
-              <!-- Member list will be dynamically populated here -->
-            </div>
-          </div>
-        </div>
+        <div class="messages-header">Chat</div>
         <div class="messages" id="chatBox"></div>
         <div class="input-area">
           <input id="msgInput" type="text" placeholder="Type a message..." />
@@ -302,22 +240,12 @@
         </div>
       </div>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <script>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-      // const socket = io("https://web-production-70a4.up.railway.app");
->>>>>>> Stashed changes
-=======
-      // const socket = io("https://web-production-70a4.up.railway.app");
->>>>>>> Stashed changes
-      const socket = io();
+      const socket = io("https://web-production-70a4.up.railway.app");
       const videoInput = document.getElementById("video-input");
       const searchBtn = document.getElementById("search-btn");
       const playUrlBtn = document.getElementById("play-url-btn");
-      const membersBtn = document.getElementById("members-btn");
-      const membersDropdown = document.getElementById("members-dropdown");
       const username = "{{username}}";
       const room = "{{room_code}}";
 
@@ -330,13 +258,12 @@
       tag.src = "https://www.youtube.com/iframe_api";
       const firstScriptTag = document.getElementsByTagName("script")[0];
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-      
 
       function onYouTubeIframeAPIReady() {
         player = new YT.Player("youtube-player-div", {
           height: "100%",
           width: "100%",
-          playerVars: { autoplay: 0, controls: 1, modestbranding: 1, rel: 0 },
+          playerVars: { autoplay: 1, controls: 1, modestbranding: 1, rel: 0 },
           events: {
             onReady: onPlayerReady,
             onStateChange: onPlayerStateChange,
@@ -402,11 +329,9 @@
               isLocalEvent = true;
             }, 1000);
           } else {
-            // It's playing
             setTimeout(() => {
-              player.playVideo();
               isLocalEvent = true;
-            }, 1000);
+            }, 500);
           }
         }
       }
@@ -468,7 +393,7 @@
       document.getElementById("sendBtn").onclick = () => {
         const msg = document.getElementById("msgInput").value.trim();
         if (msg) {
-          socket.emit("send_message", { msg: msg });
+          socket.emit("send_message", { username, room, msg });
           document.getElementById("msgInput").value = "";
         }
       };
@@ -477,132 +402,37 @@
         .addEventListener("keydown", (event) => {
           if (event.key === "Enter") document.getElementById("sendBtn").click();
         });
+
       socket.on("message", (data) => {
-  const chatBox = document.getElementById("chatBox");
-  const msg = data.msg;
-  const Aimsg = data.Aimsg || ""; // Fallback if Aimsg is not provided
-  const p = document.createElement("p");
+        const chatBox = document.getElementById("chatBox");
+        const msg = data.msg;
+        const p = document.createElement("p");
 
-  const colonIndex = msg.indexOf(":");
-  const isUserMessage =
-    colonIndex > -1 &&
-    !msg.endsWith("has entered the room") &&
-    !msg.endsWith("has left the room");
+        const colonIndex = msg.indexOf(":");
+        const isUserMessage =
+          colonIndex > -1 &&
+          !msg.endsWith("has entered the room") &&
+          !msg.endsWith("has left the room");
 
-  // Handle Gemini messages first
-  if (isUserMessage && msg.toUpperCase().startsWith("AI")) {
-    const sender = "AI";
-    const usernameSpan = document.createElement("strong");
-    usernameSpan.style.color = "#FFAB91";
-    usernameSpan.textContent = sender + ":";
+        if (isUserMessage) {
+          const senderUsername = msg.substring(0, colonIndex);
+          const messageText = msg.substring(colonIndex + 1);
 
-    p.appendChild(usernameSpan);
+          const usernameSpan = document.createElement("strong");
+          usernameSpan.style.color = getUserColor(senderUsername);
+          usernameSpan.textContent = senderUsername + ":";
 
-    const aiContent = document.createElement("span");
-    aiContent.innerHTML = marked.parse(Aimsg); // Safely parse Markdown
-    p.appendChild(aiContent);
-  }
-<<<<<<< Updated upstream
+          p.appendChild(usernameSpan);
+          p.appendChild(document.createTextNode(messageText));
+        } else {
+          p.textContent = msg;
+          p.style.fontStyle = "italic";
+          p.style.color = "var(--text-secondary)";
+        }
 
-  // Handle other user messages
-  else if (isUserMessage) {
-    const senderUsername = msg.substring(0, colonIndex);
-    const messageText = msg.substring(colonIndex + 1);
-
-    const usernameSpan = document.createElement("strong");
-    usernameSpan.style.color = getUserColor(senderUsername);
-    usernameSpan.textContent = senderUsername + ":";
-
-    p.appendChild(usernameSpan);
-    p.appendChild(document.createTextNode(messageText));
-  }
-
-  // Handle system messages
-  else {
-    p.textContent = msg;
-    p.style.fontStyle = "italic";
-    p.style.color = "var(--text-secondary)";
-  }
-
-  chatBox.appendChild(p);
-  chatBox.scrollTop = chatBox.scrollHeight;
-});
-
-<<<<<<< Updated upstream
         chatBox.appendChild(p);
         chatBox.scrollTop = chatBox.scrollHeight;
       });
-
-      // --- Member List Logic ---
-      membersBtn.addEventListener("click", () => {
-        membersDropdown.classList.toggle("visible");
-      });
-
-      socket.on("update_member_list", (data) => {
-        const allMembers = data.all_members || [];
-        const onlineMembers = data.online_members || [];
-
-        membersBtn.textContent = `Members (${onlineMembers.length}/${allMembers.length})`;
-        membersDropdown.innerHTML = ""; // Clear current list
-
-        const onlineSet = new Set(onlineMembers);
-
-        // Add Online Members
-        const onlineHeader = document.createElement("h4");
-        onlineHeader.textContent = "Online";
-        membersDropdown.appendChild(onlineHeader);
-        if (onlineMembers.length > 0) {
-          onlineMembers.forEach((member) => {
-            const p = document.createElement("p");
-            p.innerHTML = `<span class="online-indicator">●</span> ${member}`;
-            membersDropdown.appendChild(p);
-          });
-        }
-
-        // Add Offline Members
-        const offlineMembers = allMembers.filter(
-          (member) => !onlineSet.has(member)
-        );
-        if (offlineMembers.length > 0) {
-          const offlineHeader = document.createElement("h4");
-          offlineHeader.textContent = "Offline";
-          membersDropdown.appendChild(offlineHeader);
-          offlineMembers.forEach((member) => {
-            const p = document.createElement("p");
-            p.innerHTML = `<span class="offline-indicator">●</span> ${member}`;
-            membersDropdown.appendChild(p);
-          });
-        }
-      });
-=======
->>>>>>> Stashed changes
-=======
-
-  // Handle other user messages
-  else if (isUserMessage) {
-    const senderUsername = msg.substring(0, colonIndex);
-    const messageText = msg.substring(colonIndex + 1);
-
-    const usernameSpan = document.createElement("strong");
-    usernameSpan.style.color = getUserColor(senderUsername);
-    usernameSpan.textContent = senderUsername + ":";
-
-    p.appendChild(usernameSpan);
-    p.appendChild(document.createTextNode(messageText));
-  }
-
-  // Handle system messages
-  else {
-    p.textContent = msg;
-    p.style.fontStyle = "italic";
-    p.style.color = "var(--text-secondary)";
-  }
-
-  chatBox.appendChild(p);
-  chatBox.scrollTop = chatBox.scrollHeight;
-});
-
->>>>>>> Stashed changes
     </script>
   </body>
 </html>
