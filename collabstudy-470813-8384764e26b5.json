@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "collabstudy-470813",
+  "private_key_id": "8384764e26b542156fd081800e4bb18e08b29300",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDV6we6NMkvnoCb\nfzcnv4SdUOQ55MSbv2wHB4+/W53HHTQdvegZccob/N5qm0MeWtsJQC8BS3iUoBDE\nObFFSj/I55R7G/MxiwZ0dwuePyLaxvI6IQ5K9alZEbHJlTpKFTyMFnxcStUczOkl\nPz8lWPNRSihugpzI0+uRasz6FV8zWHcIos73ZsaTvgwbU2Cq89d6O9i/iHHp8kAW\nB2bNFEvsdYD802QaghTG1LKagSiEiOHRqPG9FM8yBFSjCBHMI3A8ejDahaOhFimb\nOrBKZwfg6np0OFvSFtK71PtFKxAgGHwd7jURRXG0q8vogSt3L4YAlvhpVlqprbfz\nXPJqzE2JAgMBAAECggEAAX5trw2KpiF7kRpsqS4Q4AReQ6U8VkDE9rDv07dGZ8s6\nv5vBkNlBlGZ0qyvrERLeBWIvBy70EvL3Naztdv1ov/TAuFyz8Gb3JD28lV39gVJI\nWMLoVaUCNL6x43rTowwjlcWGbXfm+xeB5/euxN+qe1PYP8VREPn3OCxrGAf+193w\nA9s0eh4BTSUhIMY3Rb2nbu49AgV8FN7zOs5QHN58Ri9xI4Co8a4l75SggrTXiSB5\n7tRIl001oJCVNf2mx8tLtL/SKc7hbBLVfzdkT/el8vXvYpGDW6G/2J6e9rv57CgK\nY/nSfq/SDR7AamaDxmbEuL0DCufloCPEtzBhTrJVMQKBgQD1cRZzrIAp0m2Z11Q9\ncsc+b3FailvOVKMk/3UrBrPzv8eah9aqJzzUWzxaQD/IQB5bcB6BkDTbbf+4Kqde\nQaQvZPGaK6tAcIWgsfucv/wv2pHGryV3xLZlKs5VUs7e6MnOdHzi9HdHbt/o5TGZ\nyYSvd2Wrso2VSGAjUs+k10KwlQKBgQDfHspCUGlEqlN2m5+lwr/8GDZ70zKMQ5/4\nW6DSg3peI4P0GV1unpG5xDfl3tAQS94XpLquT0sz2GkMZOCMsitBkAOCkS64zBwO\nMmXvinB78wUqEoI+llwPA85iz7agpAe07KIYNrt62oJ/XKknoi0Zj94T5FAGboHe\nTMfxzGuoJQKBgG6/7KWdfOdiMFpus3BWzlj56Gg2bl6YClWzf6c+iwy9yM+N4+s7\ncVNRJ9aBj0ZIyGnyGZHVBETPSchMVuFNNUy9e9dZRRj6rRFpvmNord7Z/VVtyrZU\naQkVW61chERJPmaOYZv3O6tb+GUaplsCd4DFm3byRrjJw7essk1rZIhRAoGBALdY\nd+Ayb66LQHawv2nZNSYVR4BNNrZoQ6Y0tV0HyaBeEuqdhVeHWjyK71wn0lXx4hkP\nto/SfPunk/spUhSLvFvt2dSLNReKMmvAIl/LJU/VjaLa/sgrio6UFB7CjVJIOEUG\nRtUa9Mipkp7SJ/Z3oBPnUxiJfvEqEfH4qj0aPEU5AoGAB0+7SgetBfd2J1Fmm5B3\nHxoOdiBHc7hn8LVYixccp1ETxBaeg71aKpDfP2V/i6Ypc5TxTeBA+hS611+/7zWA\nta5cLxCvQPpVyWZ1eT8++Y26tzqUsGLsv58p3fbbx/AtsRM8r84GGzOi8/Cp3EW3\nbJ0Cx9CLJILFTcZQqtIengc=\n-----END PRIVATE KEY-----\n",
+  "client_email": "collabstudy-app-runner@collabstudy-470813.iam.gserviceaccount.com",
+  "client_id": "115639071919454874274",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/collabstudy-app-runner%40collabstudy-470813.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
