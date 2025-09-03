@@ -305,6 +305,10 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+      // const socket = io("https://web-production-70a4.up.railway.app");
+>>>>>>> Stashed changes
 =======
       // const socket = io("https://web-production-70a4.up.railway.app");
 >>>>>>> Stashed changes
@@ -498,6 +502,7 @@
     aiContent.innerHTML = marked.parse(Aimsg); // Safely parse Markdown
     p.appendChild(aiContent);
   }
+<<<<<<< Updated upstream
 
   // Handle other user messages
   else if (isUserMessage) {
@@ -570,6 +575,33 @@
         }
       });
 =======
+>>>>>>> Stashed changes
+=======
+
+  // Handle other user messages
+  else if (isUserMessage) {
+    const senderUsername = msg.substring(0, colonIndex);
+    const messageText = msg.substring(colonIndex + 1);
+
+    const usernameSpan = document.createElement("strong");
+    usernameSpan.style.color = getUserColor(senderUsername);
+    usernameSpan.textContent = senderUsername + ":";
+
+    p.appendChild(usernameSpan);
+    p.appendChild(document.createTextNode(messageText));
+  }
+
+  // Handle system messages
+  else {
+    p.textContent = msg;
+    p.style.fontStyle = "italic";
+    p.style.color = "var(--text-secondary)";
+  }
+
+  chatBox.appendChild(p);
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
+
 >>>>>>> Stashed changes
     </script>
   </body>

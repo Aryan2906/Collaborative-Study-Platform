@@ -4,6 +4,7 @@ import time
 import random
 import re
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import eventlet
 from google.oauth2 import service_account
 from flask import Flask, request, render_template, session, redirect, url_for, flash
@@ -11,6 +12,8 @@ from flask_socketio import join_room, leave_room, SocketIO, emit
 from authlib.integrations.flask_client import OAuth
 from google.cloud import firestore
 =======
+=======
+>>>>>>> Stashed changes
 import time
 #import eventlet
 from flask import render_template
@@ -21,6 +24,7 @@ from googleapiclient.errors import HttpError
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+<<<<<<< Updated upstream
 
 eventlet.monkey_patch()
 app = Flask(__name__)
@@ -74,6 +78,11 @@ YOUTUBE_API_VERSION = "v3"
 
 =======
 
+=======
+
+
+
+>>>>>>> Stashed changes
 #loadingenv
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
