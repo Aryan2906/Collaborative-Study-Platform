@@ -302,8 +302,12 @@
         </div>
       </div>
     </div>
-
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+<<<<<<< Updated upstream
+=======
+      // const socket = io("https://web-production-70a4.up.railway.app");
+>>>>>>> Stashed changes
       const socket = io();
       const videoInput = document.getElementById("video-input");
       const searchBtn = document.getElementById("search-btn");
@@ -322,6 +326,7 @@
       tag.src = "https://www.youtube.com/iframe_api";
       const firstScriptTag = document.getElementsByTagName("script")[0];
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      
 
       function onYouTubeIframeAPIReady() {
         player = new YT.Player("youtube-player-div", {
@@ -468,34 +473,57 @@
         .addEventListener("keydown", (event) => {
           if (event.key === "Enter") document.getElementById("sendBtn").click();
         });
-
       socket.on("message", (data) => {
-        const chatBox = document.getElementById("chatBox");
-        const msg = data.msg;
-        const p = document.createElement("p");
+  const chatBox = document.getElementById("chatBox");
+  const msg = data.msg;
+  const Aimsg = data.Aimsg || ""; // Fallback if Aimsg is not provided
+  const p = document.createElement("p");
 
-        const colonIndex = msg.indexOf(":");
-        const isUserMessage =
-          colonIndex > -1 &&
-          !msg.endsWith("has entered the room") &&
-          !msg.endsWith("has left the room");
+  const colonIndex = msg.indexOf(":");
+  const isUserMessage =
+    colonIndex > -1 &&
+    !msg.endsWith("has entered the room") &&
+    !msg.endsWith("has left the room");
 
-        if (isUserMessage) {
-          const senderUsername = msg.substring(0, colonIndex);
-          const messageText = msg.substring(colonIndex + 1);
+  // Handle Gemini messages first
+  if (isUserMessage && msg.toUpperCase().startsWith("AI")) {
+    const sender = "AI";
+    const usernameSpan = document.createElement("strong");
+    usernameSpan.style.color = "#FFAB91";
+    usernameSpan.textContent = sender + ":";
 
-          const usernameSpan = document.createElement("strong");
-          usernameSpan.style.color = getUserColor(senderUsername);
-          usernameSpan.textContent = senderUsername + ":";
+    p.appendChild(usernameSpan);
 
-          p.appendChild(usernameSpan);
-          p.appendChild(document.createTextNode(messageText));
-        } else {
-          p.textContent = msg;
-          p.style.fontStyle = "italic";
-          p.style.color = "var(--text-secondary)";
-        }
+    const aiContent = document.createElement("span");
+    aiContent.innerHTML = marked.parse(Aimsg); // Safely parse Markdown
+    p.appendChild(aiContent);
+  }
 
+  // Handle other user messages
+  else if (isUserMessage) {
+    const senderUsername = msg.substring(0, colonIndex);
+    const messageText = msg.substring(colonIndex + 1);
+
+    const usernameSpan = document.createElement("strong");
+    usernameSpan.style.color = getUserColor(senderUsername);
+    usernameSpan.textContent = senderUsername + ":";
+
+    p.appendChild(usernameSpan);
+    p.appendChild(document.createTextNode(messageText));
+  }
+
+  // Handle system messages
+  else {
+    p.textContent = msg;
+    p.style.fontStyle = "italic";
+    p.style.color = "var(--text-secondary)";
+  }
+
+  chatBox.appendChild(p);
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+<<<<<<< Updated upstream
         chatBox.appendChild(p);
         chatBox.scrollTop = chatBox.scrollHeight;
       });
@@ -541,6 +569,8 @@
           });
         }
       });
+=======
+>>>>>>> Stashed changes
     </script>
   </body>
 </html>

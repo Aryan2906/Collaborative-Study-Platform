@@ -3,18 +3,29 @@ import json
 import time
 import random
 import re
+<<<<<<< Updated upstream
 import eventlet
 from google.oauth2 import service_account
 from flask import Flask, request, render_template, session, redirect, url_for, flash
 from flask_socketio import join_room, leave_room, SocketIO, emit
 from authlib.integrations.flask_client import OAuth
 from google.cloud import firestore
+=======
+import time
+#import eventlet
+from flask import render_template
+from flask_socketio import join_room,leave_room,SocketIO,send,emit
+>>>>>>> Stashed changes
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
 eventlet.monkey_patch()
 app = Flask(__name__)
 
+<<<<<<< Updated upstream
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app,async_mode='eventlet', cors_allowed_origins="*")
 
@@ -61,6 +72,27 @@ YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 
 
+=======
+
+#loadingenv
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
+YOUTUBE_API_SERVICE_NAME = os.getenv("YOUTUBE_API_SERVICE_NAME")
+YOUTUBE_API_VERSION= os.getenv("YOUTUBE_API_VERSION")
+GOOGLE_API_KEY=os.getenv("GOOGLE_API_KEY")
+#initialization of flask and socketio
+#eventlet.monkey_patch()
+
+#initializing the flask app and other features
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)#,async_mode='eventlet', cors_allowed_origins="*")
+client=genai.GenerativeModel("gemini-2.5-flash")
+
+rooms={} #rooms dictionary temp
+user_sessions = {}#for session ids
+
+>>>>>>> Stashed changes
 
 def random_room_generator():
     """Generates a random 5-character room code."""
@@ -288,6 +320,7 @@ def handle_join(data):
                     'state': video_state['state']
                 }, to=request.sid)
 
+<<<<<<< Updated upstream
 @socketio.on('send_message')
 def handle_send_message(data):
     user_session = sid_to_user.get(request.sid)
@@ -298,6 +331,50 @@ def handle_send_message(data):
     emit('message', {'msg': f"{username}: {data.get('msg', '')}"}, to=room_code)
 
 @socketio.on('search_video')
+=======
+@socketio.on("send_message")
+def send_message(data):
+    username = data['username']
+    room = data['room']
+    msg = data['msg']
+    
+    # Broadcast user message
+    emit('message', {'msg': f'{username}: {msg}'}, room=room)
+
+    # If message starts with 'gemini', trigger AI
+    if msg.lower().lstrip().startswith("@ai"):
+        query = msg.lstrip()[6:].strip()
+        print(f"AI Query: {query}")
+        emit('message', {
+            'msg': 'AI:',  # Tag so frontend detects Gemini
+            'Aimsg': "thinking..."  # AI message in raw format
+        }, room=room)   
+
+        response = client.generate_content(
+            f"{username} asks {query}. "
+            "Respond as a helpful teacher. "
+            "Be concise, clear, and format using Markdown."
+            "Should not Exceed more than 150 words unless asked"
+           "Do not reveal that you are Gemini,your name is AI"
+           "Do not give too many easy examples first just explain normally"
+        )
+        print(f"Gemini Response: {response.text}")
+
+        # Broadcast Gemini response with a separate Aimsg field
+        emit('message', {
+            'msg': 'AI:',  # Tag so frontend detects Gemini
+            'Aimsg': response.text  # AI message in raw format
+        }, room=room)        
+def update_video_state(room, video_id):
+    rooms[room]['current_video'] = {
+        'id': video_id,
+        'state': 'playing',
+        'time': 0,
+        'last_update': time.time()
+    }
+# --- New SocketIO Handlers for YouTube ---
+@socketio.on("search_video")
+>>>>>>> Stashed changes
 def handle_search_video(data):
     user_session = sid_to_user.get(request.sid)
     if not user_session: return
