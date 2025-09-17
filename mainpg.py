@@ -1,4 +1,3 @@
-import eventlet
 import os
 import json
 import time
@@ -15,7 +14,6 @@ from googleapiclient.errors import HttpError
 import firebase_admin
 from firebase_admin import credentials, auth,firestore
 
-eventlet.monkey_patch()
 app = Flask(__name__)
 
 
@@ -347,4 +345,7 @@ def handle_disconnect():
                 emit('update_member_list', {'all_members': all_members, 'online_members': online_members}, to=room_code)
 
 if __name__ == '__main__':
-    socketio.run(app, host='localhost', port=5000, debug=False)
+    import eventlet
+    eventlet.monkey_patch()
+    port = int(os.environ.get("PORT", 8080)) 
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
