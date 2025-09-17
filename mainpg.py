@@ -40,15 +40,10 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 
-
-try:
-    
-    cred = credentials.Certificate('collabstudy-dcfa0-firebase-adminsdk-fbsvc-8ebcb816e6.json')
-    firebase_admin.initialize_app(cred)
-    db=firestore.client()
-    print("Successfully initialized Firebase Admin SDK.")
-except Exception as e:
-    print(f"CRITICAL: Could not initialize Firebase Admin SDK. Error: {e}")
+cred_dict = json.loads(os.environ['FIREBASE_CREDENTIALS'])
+cred = credentials.Certificate(cred_dict)
+firebase_admin.initialize_app(cred)
+db=firestore.client()
 
 
 API_KEY = "AIzaSyAav6iqs8d6XyLztW2oGeiR5rv2kNJW6JI"
