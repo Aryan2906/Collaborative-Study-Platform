@@ -1,2 +1,1 @@
-web: gunicorn -k eventlet -w 1 main:app --bind 0.0.0.0:8080 --timeout 120
-
+web: gunicorn --worker-class eventlet -w 1 mainpg:app
