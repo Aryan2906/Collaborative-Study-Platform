@@ -24,15 +24,14 @@ import re
 
 from flask import Flask, request, render_template, session, redirect, url_for, flash, jsonify
 from flask_socketio import join_room, leave_room, SocketIO, emit
-from google.cloud import firestore
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 
 import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, auth,firestore,initialize_app
 
-eventlet.monkey_patch()
+eventlet.monkey_patch() 
 app = Flask(__name__)
 
 
@@ -42,7 +41,7 @@ socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 cred_dict = json.loads(os.environ['FIREBASE_CREDENTIALS'])
 cred = credentials.Certificate(cred_dict)
-firebase_admin.initialize_app(cred)
+initialize_app(cred)
 db=firestore.client()
 
 
