@@ -178,6 +178,8 @@ def logout():
 def dashboard():
     if 'user' not in session:
         return redirect(url_for('homepage'))
+
+    init_firebase()
     
     user_rooms = []
     if not db:
