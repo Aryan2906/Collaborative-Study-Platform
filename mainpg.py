@@ -49,8 +49,8 @@ def init_firebase():
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
     db = firestore.client()
+    return db
 
-init_firebase()
 
 
 
@@ -104,6 +104,7 @@ def homepage():
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
+    db = init_firebase()
     try:
         if not request.is_json:
             return jsonify({"status": "error", "message": "Request must be JSON."}), 400
@@ -113,7 +114,9 @@ def verify_token():
             return jsonify({"status": "error", "message": "Token not provided."}), 400
 
         # Step 1: Verify token
+        print("Verifying")
         decoded_token = auth.verify_id_token(id_token)
+        print("Verified")
         uid = decoded_token.get('uid')
         if not uid:
             return jsonify({"status": "error", "message": "Invalid token."}), 401
