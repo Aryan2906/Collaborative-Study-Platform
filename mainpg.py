@@ -26,7 +26,6 @@ from flask import Flask, request, render_template, session, redirect, url_for, f
 from flask_socketio import join_room, leave_room, SocketIO, emit
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from threading import Thread
 
 
 import firebase_admin
@@ -40,12 +39,17 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 
-cred_dict = json.loads(os.environ['FIREBASE_CREDENTIALS'])
-cred = credentials.Certificate(cred_dict)
-initialize_app(cred)
-db = firestore.client()
+db = None
 
+def init_firebase():
+    global db
+    if not firebase_admin._apps:  # ✅ prevents multiple initializations
+        cred_dict = json.loads(os.environ['FIREBASE_CREDENTIALS'])
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+    db = firestore.client()
 
+init_firebase()
 
 
 
@@ -99,8 +103,8 @@ def homepage():
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
-    global db
     try:
+        # Make sure the request is JSON
         if not request.is_json:
             return jsonify({"status": "error", "message": "Request must be JSON."}), 400
 
@@ -108,15 +112,13 @@ def verify_token():
         if not id_token:
             return jsonify({"status": "error", "message": "Token not provided."}), 400
 
-        # Step 1: Verify token
-        print("Verifying")
+        # Verify Firebase ID token
         decoded_token = auth.verify_id_token(id_token)
-        print("Verified")
         uid = decoded_token.get('uid')
         if not uid:
             return jsonify({"status": "error", "message": "Invalid token."}), 401
 
-        # Step 2: Extract user info
+        # Safely extract user info
         user_info = {
             'id': uid,
             'name': decoded_token.get('name', ''),
@@ -124,32 +126,23 @@ def verify_token():
             'picture': decoded_token.get('picture', '')
         }
 
+        # Update Firestore
+        if db:
+            user_ref = db.collection('users').document(uid)
+            user_doc = user_ref.get()
+            user_data_to_set = {
+                'name': user_info['name'],
+                'email': user_info['email'],
+                'picture': user_info['picture'],
+            }
+            if not user_doc.exists:
+                user_data_to_set['rooms'] = []
+                user_ref.set(user_data_to_set)
+            else:
+                user_ref.update(user_data_to_set)
+
         # Save user info in session
         session['user'] = user_info
-
-        # Step 3: Firestore update in background thread
-        def update_firestore():
-            try:
-                if db:
-                    user_ref = db.collection('users').document(uid)
-                    user_doc = user_ref.get()
-                    user_data_to_set = {
-                        'name': user_info['name'],
-                        'email': user_info['email'],
-                        'picture': user_info['picture'],
-                    }
-                    if not user_doc.exists:
-                        user_data_to_set['rooms'] = []
-                        user_ref.set(user_data_to_set)
-                    else:
-                        user_ref.update(user_data_to_set)
-                print(f"[VERIFY] Firestore updated for user {uid}")
-            except Exception as e:
-                print(f"[VERIFY] Firestore update failed: {e}")
-
-        Thread(target=update_firestore, daemon=True).start()
-
-        # Step 4: Return immediately
         return jsonify({"status": "success", "message": "User authenticated."})
 
     except auth.InvalidIdTokenError:
@@ -157,8 +150,10 @@ def verify_token():
     except auth.ExpiredIdTokenError:
         return jsonify({"status": "error", "message": "Token expired."}), 401
     except Exception as e:
+        print("=== VERIFY TOKEN ERROR START ===")
         import traceback
         traceback.print_exc()
+        print("=== VERIFY TOKEN ERROR END ===")
         return jsonify({"status": "error", "message": f"Authentication failed: {e}"}), 500
 
 
