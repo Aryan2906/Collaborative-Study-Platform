@@ -109,39 +109,55 @@ def homepage():
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
     try:
+        # Make sure the request is JSON
+        if not request.is_json:
+            return jsonify({"status": "error", "message": "Request must be JSON."}), 400
+
         id_token = request.json.get('token')
         if not id_token:
             return jsonify({"status": "error", "message": "Token not provided."}), 400
 
+        # Verify Firebase ID token
         decoded_token = auth.verify_id_token(id_token)
-        uid = decoded_token['uid']
+        uid = decoded_token.get('uid')
+        if not uid:
+            return jsonify({"status": "error", "message": "Invalid token."}), 401
+
+        # Safely extract user info
         user_info = {
             'id': uid,
-            'name': decoded_token.get('name'),
-            'email': decoded_token.get('email'),
-            'picture': decoded_token.get('picture')
+            'name': decoded_token.get('name', ''),
+            'email': decoded_token.get('email', ''),
+            'picture': decoded_token.get('picture', '')
         }
 
+        # Update Firestore
         if db:
             user_ref = db.collection('users').document(uid)
             user_doc = user_ref.get()
             user_data_to_set = {
                 'name': user_info['name'],
                 'email': user_info['email'],
-                'picture': user_info.get('picture'),
+                'picture': user_info['picture'],
             }
             if not user_doc.exists:
                 user_data_to_set['rooms'] = []
                 user_ref.set(user_data_to_set)
             else:
                 user_ref.update(user_data_to_set)
-        
+
+        # Save user info in session
         session['user'] = user_info
         return jsonify({"status": "success", "message": "User authenticated."})
 
+    except auth.InvalidIdTokenError:
+        return jsonify({"status": "error", "message": "Invalid token."}), 401
+    except auth.ExpiredIdTokenError:
+        return jsonify({"status": "error", "message": "Token expired."}), 401
     except Exception as e:
         print(f"Authentication failed: {e}")
-        return jsonify({"status": "error", "message": f"Authentication failed: {e}"}), 401
+        return jsonify({"status": "error", "message": f"Authentication failed: {e}"}), 500
+
 
 @app.route('/logout')
 def logout():
