@@ -16,23 +16,34 @@ from googleapiclient.errors import HttpError
 import firebase_admin
 from firebase_admin import credentials, auth,firestore
 
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor(max_workers=5)
+
+def run_in_executor(func, *args, **kwargs):
+    return executor.submit(func, *args, **kwargs).result()
+
 app = Flask(__name__)
 
 
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
 
 db = None
 
-try:
-    firebase_config = os.environ.get("FIREBASE_CONFIG")
-    cred_dict = json.loads(firebase_config)
-    cred = credentials.Certificate(cred_dict)
-    firebase_admin.initialize_app(cred)
-    print("Successfully initialized Firebase Admin SDK.")
-    db = firestore.client()
-except Exception as e:
-    print(f"CRITICAL: Could not initialize Firebase Admin SDK. Error: {e}")
+firebase_app = None
+db = None
+
+def get_firebase_app():
+    global firebase_app, db
+    if not firebase_app:
+        config = os.environ.get("FIREBASE_CONFIG")
+        cred_dict = json.loads(config)
+        # Fix newline characters
+        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+        firebase_app = firebase_admin.initialize_app(credentials.Certificate(cred_dict))
+        db = firestore.client()
+        print("Firebase initialized")
+    return firebase_app,db
 
 
 
@@ -68,6 +79,7 @@ def get_video_id_from_url(url: str):
 
 def update_video_state(room_code, video_id):
     """Helper to reset a room's video state in Firestore for a new video."""
+    firebase_app, db = get_firebase_app()
     if not db: return
     room_ref = db.collection('rooms').document(room_code)
     room_ref.update({
@@ -86,6 +98,7 @@ def homepage():
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
+    firebase_app, db = get_firebase_app()
     try:
         id_token = request.json.get('token')
         if not id_token:
@@ -129,6 +142,7 @@ def logout():
 
 @app.route('/dashboard')
 def dashboard():
+    firebase_app, db = get_firebase_app()
     if 'user' not in session:
         return redirect(url_for('homepage'))
     
@@ -149,6 +163,7 @@ def dashboard():
 
 @app.route('/room', methods=['POST'])
 def create_or_join_room():
+    firebase_app, db = get_firebase_app()
     if 'user' not in session or not db:
         return redirect(url_for('homepage'))
 
@@ -182,6 +197,7 @@ def create_or_join_room():
 
 @app.route('/room/<room_code>')
 def rejoin_room(room_code):
+    firebase_app, db = get_firebase_app()
     if 'user' not in session or not db:
         return redirect(url_for('homepage'))
     
@@ -204,6 +220,7 @@ def rejoin_room(room_code):
 
 @app.route('/leave_room', methods=['POST'])
 def leave_room_route():
+    firebase_app, db = get_firebase_app()
     if 'user' not in session or not db:
         return redirect(url_for('homepage'))
         
@@ -231,6 +248,7 @@ def get_online_members(room_code):
 
 @socketio.on('join_room')
 def handle_join(data):
+    firebase_app, db = get_firebase_app()
     room_code = data['room']
     username = data['username']
     
@@ -297,6 +315,7 @@ def handle_play_from_url(data):
 
 @socketio.on('video_event')
 def handle_video_event(data):
+    firebase_app, db = get_firebase_app()
     user_session = sid_to_user.get(request.sid)
     if not user_session: return
 
@@ -316,6 +335,7 @@ def handle_video_event(data):
 
 @socketio.on('sync_time')
 def handle_sync_time(data):
+    firebase_app, db = get_firebase_app()
     user_session = sid_to_user.get(request.sid)
     if not user_session: return
     
@@ -331,6 +351,7 @@ def handle_sync_time(data):
 
 @socketio.on('disconnect')
 def handle_disconnect():
+    firebase_app, db = get_firebase_app()
     if request.sid in sid_to_user:
         user_info = sid_to_user.pop(request.sid)
         username = user_info['username']
