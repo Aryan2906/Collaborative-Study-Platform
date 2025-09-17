@@ -155,8 +155,12 @@ def verify_token():
     except auth.ExpiredIdTokenError:
         return jsonify({"status": "error", "message": "Token expired."}), 401
     except Exception as e:
-        print(f"Authentication failed: {e}")
+        print("=== VERIFY TOKEN ERROR START ===")
+        import traceback
+        traceback.print_exc()
+        print("=== VERIFY TOKEN ERROR END ===")
         return jsonify({"status": "error", "message": f"Authentication failed: {e}"}), 500
+
 
 
 @app.route('/logout')
