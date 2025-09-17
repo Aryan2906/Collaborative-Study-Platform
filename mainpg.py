@@ -45,18 +45,11 @@ try:
     
     cred = credentials.Certificate('collabstudy-dcfa0-firebase-adminsdk-fbsvc-8ebcb816e6.json')
     firebase_admin.initialize_app(cred)
+    db=firestore.client()
     print("Successfully initialized Firebase Admin SDK.")
 except Exception as e:
     print(f"CRITICAL: Could not initialize Firebase Admin SDK. Error: {e}")
 
-
-try:
-    db = firestore.Client.from_service_account_json('collabstudy-dcfa0-firebase-adminsdk-fbsvc-8ebcb816e6.json')
-    print("Successfully connected to Firestore using service account key.")
-except Exception as e:
-    print("CRITICAL: Could not connect to Firestore. Ensure 'collabstudy-dcfa0-firebase-adminsdk-fbsvc-8ebcb816e6.json' is present and valid.")
-    print(e)
-    db = None
 
 API_KEY = "AIzaSyAav6iqs8d6XyLztW2oGeiR5rv2kNJW6JI"
 YOUTUBE_API_SERVICE_NAME = "youtube"
