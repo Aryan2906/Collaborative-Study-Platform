@@ -26,6 +26,7 @@ socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 db = None
 
 def init_firebase():
+    """Lazy Firebase initialization, safe for multiple calls."""
     global db
     if db:
         return db
@@ -43,14 +44,7 @@ def init_firebase():
     except Exception as e:
         db = None
         print(f"[Firebase] Initialization failed: {e}")
-        raise e
-
-# Initialize Firebase once at startup
-try:
-    init_firebase()
-except Exception:
-    print("Firebase could not be initialized. Exiting app.")
-    exit(1)
+        return None  # don’t crash the app
 
 # ------------------- YouTube API -------------------
 API_KEY = "AIzaSyAav6iqs8d6XyLztW2oGeiR5rv2kNJW6JI"
@@ -78,9 +72,12 @@ def random_room_generator():
     return "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=2)) + "".join(random.choices("0123456789", k=3))
 
 def update_video_state(room_code, video_id):
-    if not db: return
+    db_local = init_firebase()
+    if not db_local:
+        print("[VideoState] Firestore not available")
+        return
     try:
-        room_ref = db.collection('rooms').document(room_code)
+        room_ref = db_local.collection('rooms').document(room_code)
         room_ref.update({
             'current_video': {
                 'id': video_id,
@@ -99,6 +96,7 @@ def homepage():
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
+    db_local = init_firebase()
     try:
         if not request.is_json:
             return jsonify({"status": "error", "message": "Request must be JSON."}), 400
@@ -120,11 +118,10 @@ def verify_token():
         }
         session['user'] = user_info
 
-        # Firestore update in background
         def update_firestore():
             try:
-                if db:
-                    user_ref = db.collection('users').document(uid)
+                if db_local:
+                    user_ref = db_local.collection('users').document(uid)
                     user_doc = user_ref.get()
                     data = {
                         'name': user_info['name'],
@@ -158,25 +155,30 @@ def dashboard():
     if 'user' not in session:
         return redirect(url_for('homepage'))
 
-    if not db:
+    db_local = init_firebase()
+    rooms = []
+    if db_local:
+        try:
+            user_ref = db_local.collection('users').document(session['user']['id'])
+            user_doc = user_ref.get()
+            rooms = user_doc.to_dict().get('rooms', []) if user_doc.exists else []
+        except Exception as e:
+            flash(f"Error fetching rooms: {e}", "error")
+    else:
         flash("Database not initialized. Room data unavailable.", "error")
-        return render_template('dashboard.html', user=session.get('user'), rooms=[])
-
-    try:
-        user_ref = db.collection('users').document(session['user']['id'])
-        user_doc = user_ref.get()
-        rooms = user_doc.to_dict().get('rooms', []) if user_doc.exists else []
-    except Exception as e:
-        flash(f"Error fetching rooms: {e}", "error")
-        rooms = []
 
     return render_template('dashboard.html', user=session['user'], rooms=rooms)
 
 # ------------------- Room Routes -------------------
 @app.route('/room', methods=['POST'])
 def create_or_join_room():
-    if 'user' not in session or not db:
+    if 'user' not in session:
         return redirect(url_for('homepage'))
+
+    db_local = init_firebase()
+    if not db_local:
+        flash("Database unavailable.", "error")
+        return redirect(url_for('dashboard'))
 
     user_info = session['user']
     action = request.form.get('action')
@@ -185,7 +187,7 @@ def create_or_join_room():
     try:
         if action == "Create":
             room_code = random_room_generator()
-            db.collection('rooms').document(room_code).set({
+            db_local.collection('rooms').document(room_code).set({
                 'created_by': user_info['id'],
                 'users': [user_info['name']],
                 'current_video': None
@@ -195,14 +197,14 @@ def create_or_join_room():
                 flash("Please enter a room code.", "error")
                 return redirect(url_for('dashboard'))
 
-            room_ref = db.collection('rooms').document(room_code)
+            room_ref = db_local.collection('rooms').document(room_code)
             if not room_ref.get().exists:
                 flash(f"Room '{room_code}' not found.", "error")
                 return redirect(url_for('dashboard'))
 
             room_ref.update({'users': firestore.ArrayUnion([user_info['name']])})
 
-        db.collection('users').document(user_info['id']).update({'rooms': firestore.ArrayUnion([room_code])})
+        db_local.collection('users').document(user_info['id']).update({'rooms': firestore.ArrayUnion([room_code])})
     except Exception as e:
         flash(f"Room operation failed: {e}", "error")
         return redirect(url_for('dashboard'))
@@ -211,20 +213,24 @@ def create_or_join_room():
 
 @app.route('/room/<room_code>')
 def rejoin_room(room_code):
-    if 'user' not in session or not db:
+    if 'user' not in session:
         return redirect(url_for('homepage'))
 
+    db_local = init_firebase()
+    if not db_local:
+        flash("Database unavailable.", "error")
+        return redirect(url_for('dashboard'))
+
     try:
-        room_doc = db.collection('rooms').document(room_code).get()
+        room_doc = db_local.collection('rooms').document(room_code).get()
         if not room_doc.exists:
             flash(f"Room '{room_code}' not found.", "error")
             return redirect(url_for('dashboard'))
 
-        user_doc = db.collection('users').document(session['user']['id']).get()
+        user_doc = db_local.collection('users').document(session['user']['id']).get()
         if user_doc.exists and room_code not in user_doc.to_dict().get('rooms', []):
             flash(f"You do not have permission to join room '{room_code}'.", "error")
             return redirect(url_for('dashboard'))
-
     except Exception as e:
         flash(f"Could not access room: {e}", "error")
         return redirect(url_for('dashboard'))
@@ -233,8 +239,13 @@ def rejoin_room(room_code):
 
 @app.route('/leave_room', methods=['POST'])
 def leave_room_route():
-    if 'user' not in session or not db:
+    if 'user' not in session:
         return redirect(url_for('homepage'))
+
+    db_local = init_firebase()
+    if not db_local:
+        flash("Database unavailable.", "error")
+        return redirect(url_for('dashboard'))
 
     room_code = request.form.get('room_code')
     if not room_code:
@@ -242,7 +253,7 @@ def leave_room_route():
         return redirect(url_for('dashboard'))
 
     try:
-        db.collection('users').document(session['user']['id']).update({'rooms': firestore.ArrayRemove([room_code])})
+        db_local.collection('users').document(session['user']['id']).update({'rooms': firestore.ArrayRemove([room_code])})
     except Exception as e:
         flash(f"Could not leave room: {e}", "error")
 
@@ -263,9 +274,10 @@ def handle_join(data):
     join_room(room_code)
     emit('message', {'msg': f"{username} has entered the room"}, to=room_code)
 
-    if db:
+    db_local = init_firebase()
+    if db_local:
         try:
-            room_doc = db.collection('rooms').document(room_code).get()
+            room_doc = db_local.collection('rooms').document(room_code).get()
             if room_doc.exists:
                 all_members = room_doc.to_dict().get('users', [])
                 emit('update_member_list', {'all_members': all_members, 'online_members': get_online_members(room_code)}, to=room_code)
