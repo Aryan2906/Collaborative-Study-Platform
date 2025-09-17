@@ -117,24 +117,16 @@
         loginButton.textContent = "Signing in...";
         loginButton.disabled = true;
 
-        auth
-          .signInWithPopup(provider)
-          .then((result) => {
-            const user = result.user;
-            return user.getIdToken();
-          })
-          .then((idToken) => {
-            // Send token to your backend to create a session
-            return fetch("/verify-token", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ token: idToken }),
-            });
-          })
-          .then((response) => {
-            if (response.ok) {
-              window.location.href = "/dashboard";
-            } else {
+        auth.signInWithPopup(provider)
+  .then((result) => result.user.getIdToken())
+  .then((idToken) => fetch("/verify-token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: idToken })
+  }))
+  .then(response => {
+    if (response.ok) window.location.href = "/dashboard";
+   else {
               throw new Error("Server authentication failed.");
             }
           })
