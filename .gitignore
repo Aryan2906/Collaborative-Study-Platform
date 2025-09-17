@@ -1,5 +1,5 @@
-mvenv/
+venv/
 .venv/
 __pycache__/
 *.pyc
-collabstudy-dcfa0-firebase-adminsdk-fbsvc-8ebcb816e6.json
+mvenv
