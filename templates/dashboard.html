@@ -9,13 +9,226 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
       rel="stylesheet" />
-    <link rel="stylesheet" href="/static/style.css"/>
+    <style>
+      :root {
+        --background-primary: #121212;
+        --background-secondary: #1e1e1e;
+        --background-tertiary: #2c2c2c;
+        --primary-accent: #3a82f7;
+        --primary-accent-hover: #5a9bff;
+        --text-primary: #eaeaea;
+        --text-secondary: #a0a0a0;
+        --border-color: #333333;
+        --danger-color: #f44336;
+        --danger-color-hover: #e57373;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Poppins", sans-serif;
+        background: var(--background-primary);
+        color: var(--text-primary);
+        padding: 20px;
+      }
+      .dashboard-container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 20px;
+        margin-bottom: 40px;
+      }
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 600;
+      }
+      .logout-btn {
+        background: var(--background-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: 500;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.2s, color 0.2s;
+      }
+      .logout-btn:hover {
+        background-color: var(--danger-color);
+        border-color: var(--danger-color);
+        color: white;
+      }
+      .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 40px;
+      }
+      .card {
+        background: var(--background-secondary);
+        border-radius: 12px;
+        padding: 30px;
+        border: 1px solid var(--border-color);
+      }
+      .card h2 {
+        font-size: 1.8rem;
+        margin-bottom: 25px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 15px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+      .form-group input {
+        width: 100%;
+        background: var(--background-tertiary);
+        color: var(--text-primary);
+        padding: 12px 18px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .form-group input:focus {
+        border-color: var(--primary-accent);
+        box-shadow: 0 0 0 3px rgba(58, 130, 247, 0.3);
+      }
+      .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+      }
+      .form-actions button {
+        flex-grow: 1;
+        padding: 12px 22px;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .create-btn {
+        background-color: var(--primary-accent);
+        color: white;
+      }
+      .create-btn:hover {
+        background-color: var(--primary-accent-hover);
+      }
+      .join-btn {
+        background-color: var(--background-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+      }
+      .join-btn:hover {
+        background-color: #3c3c3c;
+      }
+
+      .room-list ul {
+        list-style: none;
+        padding: 0;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .room-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--background-tertiary);
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border-color);
+      }
+      .room-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .room-code {
+        font-size: 1.1rem;
+        font-weight: 500;
+      }
+      .room-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .rejoin-btn,
+      .leave-btn {
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.2s;
+      }
+      .rejoin-btn {
+        background: var(--primary-accent);
+      }
+      .rejoin-btn:hover {
+        background-color: var(--primary-accent-hover);
+      }
+      .leave-btn {
+        background: var(--danger-color);
+      }
+      .leave-btn:hover {
+        background: var(--danger-color-hover);
+      }
+      .no-rooms {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+      }
+      .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: white;
+      }
+      .alert-success {
+        background-color: #4caf50; /* Green */
+        border-color: #4caf50;
+      }
+      .alert-error {
+        background-color: var(--danger-color);
+        border-color: var(--danger-color);
+      }
+      @media (max-width: 768px) {
+        .content-grid {
+          grid-template-columns: 1fr;
+        }
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="dashboard-container">
       <header class="header">
         <h1>Welcome, {{ user.name }}!</h1>
-        <a href="#" id="logout-btn" class="logout-btn">Logout</a>
+        <a href="/logout" class="logout-btn">Logout</a>
       </header>
 
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
@@ -83,43 +296,5 @@
         </section>
       </main>
     </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
-    <script>
-      // IMPORTANT: Paste your web app's Firebase configuration here again
-      const firebaseConfig = {
-        apiKey: "AIzaSyBFGgk5aVsc10bZACagRGOTIwRXPgQ0DKY",
-        authDomain: "collabstudy-dcfa0.firebaseapp.com",
-        projectId: "collabstudy-dcfa0",
-        storageBucket: "collabstudy-dcfa0.firebasestorage.app",
-        messagingSenderId: "844147179059",
-        appId: "1:844147179059:web:d1a0707c78844a848bad46",
-      };
-
-      // Initialize Firebase
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-
-      const logoutButton = document.getElementById("logout-btn");
-      logoutButton.addEventListener("click", (e) => {
-        e.preventDefault(); // Prevent the default link behavior
-
-        firebase
-          .auth()
-          .signOut()
-          .then(() => {
-            // After successful client-side sign-out, redirect to the server's logout route
-            window.location.href = "/logout";
-          })
-          .catch((error) => {
-            console.error("Logout Error:", error);
-            // Even if client-side logout fails, try to log out from the server
-            window.location.href = "/logout";
-          });
-      });
-    </script>
   </body>
 </html>
