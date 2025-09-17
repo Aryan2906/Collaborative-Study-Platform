@@ -39,10 +39,18 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 
-cred_dict = json.loads(os.environ['FIREBASE_CREDENTIALS'])
-cred = credentials.Certificate(cred_dict)
-initialize_app(cred)
-db=firestore.client()
+db = None
+
+def init_firebase():
+    global db
+    if not firebase_admin._apps:  # ✅ prevents multiple initializations
+        cred_dict = json.loads(os.environ['FIREBASE_CREDENTIALS'])
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+    db = firestore.client()
+
+init_firebase()
+
 
 
 API_KEY = "AIzaSyAav6iqs8d6XyLztW2oGeiR5rv2kNJW6JI"
