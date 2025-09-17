@@ -25,7 +25,7 @@ socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 db = None
 
 try:
-    cred = credentials.Certificate(os.environ.get(FIREBASE_CRED))
+    cred = credentials.Certificate(os.environ.get("FIREBASE_CRED"))
     firebase_admin.initialize_app(cred)
     print("Successfully initialized Firebase Admin SDK.")
     db = firestore.client()
