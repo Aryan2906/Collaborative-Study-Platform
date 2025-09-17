@@ -1,5 +1,5 @@
-import eventlet
-eventlet.monkey_patch()
+# import eventlet
+# eventlet.monkey_patch()
 import os
 import json
 import time
@@ -27,7 +27,7 @@ app = Flask(__name__)
 
 
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
 
 db = None
 
@@ -343,4 +343,4 @@ def handle_disconnect():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080)) 
-    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False,allow_unsafe_werkzeug= True)
