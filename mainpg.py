@@ -1,3 +1,5 @@
+import eventlet
+eventlet.monkey_patch()
 import os
 import json
 import time
@@ -345,7 +347,5 @@ def handle_disconnect():
                 emit('update_member_list', {'all_members': all_members, 'online_members': online_members}, to=room_code)
 
 if __name__ == '__main__':
-    import eventlet
-    eventlet.monkey_patch()
     port = int(os.environ.get("PORT", 8080)) 
     socketio.run(app, host='0.0.0.0', port=port, debug=False)
