@@ -20,7 +20,8 @@ from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=5)
 
 def run_in_executor(func, *args, **kwargs):
-    return executor.submit(func, *args, **kwargs).result()
+    future = executor.submit(func, *args, **kwargs)
+    return future.result()
 
 app = Flask(__name__)
 
@@ -115,19 +116,22 @@ def verify_token():
         }
 
         if db:
-            user_ref = db.collection('users').document(uid)
-            user_doc = user_ref.get()
-            user_data_to_set = {
-                'name': user_info['name'],
-                'email': user_info['email'],
-                'picture': user_info.get('picture'),
-            }
-            if not user_doc.exists:
-                user_data_to_set['rooms'] = []
-                user_ref.set(user_data_to_set)
-            else:
-                user_ref.update(user_data_to_set)
-        
+            def write_user():
+                user_ref = db.collection('users').document(uid)
+                user_doc = user_ref.get()
+                user_data_to_set = {
+                    'name': user_info['name'],
+                    'email': user_info['email'],
+                    'picture': user_info.get('picture'),
+                }
+                if not user_doc.exists:
+                    user_data_to_set['rooms'] = []
+                    user_ref.set(user_data_to_set)
+                else:
+                    user_ref.update(user_data_to_set)
+
+            run_in_executor(write_user)
+
         session['user'] = user_info
         return jsonify({"status": "success", "message": "User authenticated."})
 
@@ -135,10 +139,6 @@ def verify_token():
         print(f"Authentication failed: {e}")
         return jsonify({"status": "error", "message": f"Authentication failed: {e}"}), 401
 
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect(url_for('homepage'))
 
 @app.route('/dashboard')
 def dashboard():
@@ -147,12 +147,14 @@ def dashboard():
         return redirect(url_for('homepage'))
     
     user_rooms = []
-    if not db:
-        flash("Error: Could not connect to the database. Room data is unavailable.", "error")
-    else:
+    if db:
         try:
-            user_ref = db.collection('users').document(session['user']['id'])
-            user_doc = user_ref.get()
+            def fetch_rooms():
+                user_ref = db.collection('users').document(session['user']['id'])
+                user_doc = user_ref.get()
+                return user_doc
+
+            user_doc = run_in_executor(fetch_rooms)
             if user_doc.exists:
                 user_data = user_doc.to_dict()
                 user_rooms = user_data.get('rooms', [])
@@ -160,6 +162,7 @@ def dashboard():
             flash(f"An error occurred while fetching room data: {e}", "error")
 
     return render_template('dashboard.html', user=session['user'], rooms=user_rooms)
+
 
 @app.route('/room', methods=['POST'])
 def create_or_join_room():
@@ -171,42 +174,50 @@ def create_or_join_room():
     action = request.form.get('action')
     room_code = request.form.get('room_code', '').strip().upper()
 
-    if action == "Create":
-        room_code = random_room_generator()
-        db.collection('rooms').document(room_code).set({
-            'created_by': user_info['id'],
-            'users': [user_info['name']],
-            'current_video': None
-        })
-    elif action == "Join":
-        if not room_code:
-            flash("Please enter a room code to join.", "error")
-            return redirect(url_for('dashboard'))
-            
-        room_ref = db.collection('rooms').document(room_code)
-        if not room_ref.get().exists:
-            flash(f"Room '{room_code}' not found.", "error")
-            return redirect(url_for('dashboard'))
-        
-        room_ref.update({'users': firestore.ArrayUnion([user_info['name']])})
+    def db_action():
+        nonlocal room_code
+        if action == "Create":
+            room_code = random_room_generator()
+            db.collection('rooms').document(room_code).set({
+                'created_by': user_info['id'],
+                'users': [user_info['name']],
+                'current_video': None
+            })
+        elif action == "Join":
+            room_ref = db.collection('rooms').document(room_code)
+            if not room_ref.get().exists:
+                return False
+            room_ref.update({'users': firestore.ArrayUnion([user_info['name']])})
 
-    user_ref = db.collection('users').document(user_info['id'])
-    user_ref.update({'rooms': firestore.ArrayUnion([room_code])})
-    
+        user_ref = db.collection('users').document(user_info['id'])
+        user_ref.update({'rooms': firestore.ArrayUnion([room_code])})
+        return True
+
+    success = run_in_executor(db_action)
+    if not success and action == "Join":
+        flash(f"Room '{room_code}' not found.", "error")
+        return redirect(url_for('dashboard'))
+
     return redirect(url_for('rejoin_room', room_code=room_code))
+
 
 @app.route('/room/<room_code>')
 def rejoin_room(room_code):
     firebase_app, db = get_firebase_app()
     if 'user' not in session or not db:
         return redirect(url_for('homepage'))
-    
-    room_doc = db.collection('rooms').document(room_code).get()
+
+    def fetch_room_and_user():
+        room_doc = db.collection('rooms').document(room_code).get()
+        user_doc = db.collection('users').document(session['user']['id']).get()
+        return room_doc, user_doc
+
+    room_doc, user_doc = run_in_executor(fetch_room_and_user)
+
     if not room_doc.exists:
         flash(f"Room '{room_code}' could not be found.", "error")
         return redirect(url_for('dashboard'))
 
-    user_doc = db.collection('users').document(session['user']['id']).get()
     if user_doc.exists:
         user_rooms = user_doc.to_dict().get('rooms', [])
         if room_code not in user_rooms:
@@ -217,6 +228,7 @@ def rejoin_room(room_code):
         return redirect(url_for('dashboard'))
 
     return render_template('room.html', username=session['user']['name'], room_code=room_code)
+
 
 @app.route('/leave_room', methods=['POST'])
 def leave_room_route():
@@ -231,20 +243,14 @@ def leave_room_route():
         flash("Invalid request.", "error")
         return redirect(url_for('dashboard'))
     
-    user_ref = db.collection('users').document(user_info['id'])
-    user_ref.update({'rooms': firestore.ArrayRemove([room_code])})
+    def leave():
+        user_ref = db.collection('users').document(user_info['id'])
+        user_ref.update({'rooms': firestore.ArrayRemove([room_code])})
+    run_in_executor(leave)
     
     flash(f"You have left room {room_code}. You can rejoin anytime using the room code.", "success")
     return redirect(url_for('dashboard'))
 
-sid_to_user = {}
-
-def get_online_members(room_code):
-    online = []
-    for sid, user_data in sid_to_user.items():
-        if user_data['room'] == room_code:
-            online.append(user_data['username'])
-    return online
 
 @socketio.on('join_room')
 def handle_join(data):
@@ -258,7 +264,10 @@ def handle_join(data):
     emit('message', {'msg': f"{username} has entered the room"}, to=room_code)
 
     if db:
-        room_doc = db.collection('rooms').document(room_code).get()
+        def fetch_room():
+            return db.collection('rooms').document(room_code).get()
+        room_doc = run_in_executor(fetch_room)
+
         if room_doc.exists:
             room_data = room_doc.to_dict()
             all_members = room_data.get('users', [])
@@ -278,40 +287,6 @@ def handle_join(data):
                     'state': video_state['state']
                 }, to=request.sid)
 
-@socketio.on('send_message')
-def handle_send_message(data):
-    user_session = sid_to_user.get(request.sid)
-    if not user_session: return
-    
-    room_code = user_session['room']
-    username = user_session['username']
-    emit('message', {'msg': f"{username}: {data.get('msg', '')}"}, to=room_code)
-
-@socketio.on('search_video')
-def handle_search_video(data):
-    user_session = sid_to_user.get(request.sid)
-    if not user_session: return
-    
-    room_code = user_session['room']
-    video_id, error = get_video_id_from_search(data.get("query"))
-    if video_id:
-        update_video_state(room_code, video_id)
-        emit('play_video', {'video_id': video_id, 'start_time': 0, 'state': 'playing'}, to=room_code)
-    else:
-        emit('error', {'message': error})
-
-@socketio.on('play_from_url')
-def handle_play_from_url(data):
-    user_session = sid_to_user.get(request.sid)
-    if not user_session: return
-    
-    room_code = user_session['room']
-    video_id = get_video_id_from_url(data.get("url"))
-    if video_id:
-        update_video_state(room_code, video_id)
-        emit('play_video', {'video_id': video_id, 'start_time': 0, 'state': 'playing'}, to=room_code)
-    else:
-        emit('error', {'message': "Invalid YouTube URL."})
 
 @socketio.on('video_event')
 def handle_video_event(data):
@@ -322,16 +297,16 @@ def handle_video_event(data):
     room_code = user_session['room']
     
     if db:
-        try:
+        def update_event():
             db.collection('rooms').document(room_code).update({
                 'current_video.state': data['event'],
                 'current_video.time': data['time'],
                 'current_video.last_update': time.time()
             })
-        except Exception as e:
-            print(f"Note: Could not update video event for room {room_code}. Details: {e}")
+        run_in_executor(update_event)
 
     emit('video_event', data, to=room_code, skip_sid=request.sid)
+
 
 @socketio.on('sync_time')
 def handle_sync_time(data):
@@ -341,13 +316,12 @@ def handle_sync_time(data):
     
     room_code = user_session['room']
     if db:
-        try:
+        def update_time():
             db.collection('rooms').document(room_code).update({
                 'current_video.time': data['time'],
                 'current_video.last_update': time.time()
             })
-        except Exception as e:
-            print(f"Note: Could not sync time for room {room_code}. A video may not be playing yet. Details: {e}")
+        run_in_executor(update_time)
 
 @socketio.on('disconnect')
 def handle_disconnect():
