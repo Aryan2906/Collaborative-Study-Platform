@@ -104,7 +104,8 @@ def homepage():
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
-    db = init_firebase()
+    global db
+    init_firebase()
     try:
         if not request.is_json:
             return jsonify({"status": "error", "message": "Request must be JSON."}), 400
