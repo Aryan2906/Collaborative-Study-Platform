@@ -40,16 +40,11 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 
-db = None
+cred_dict = json.loads(os.environ['FIREBASE_CREDENTIALS'])
+cred = credentials.Certificate(cred_dict)
+initialize_app(cred)
+db = firestore.client()
 
-def init_firebase():
-    global db
-    if not firebase_admin._apps:  # ✅ prevents multiple initializations
-        cred_dict = json.loads(os.environ['FIREBASE_CREDENTIALS'])
-        cred = credentials.Certificate(cred_dict)
-        firebase_admin.initialize_app(cred)
-    db = firestore.client()
-    return db
 
 
 
@@ -105,7 +100,6 @@ def homepage():
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
     global db
-    init_firebase()
     try:
         if not request.is_json:
             return jsonify({"status": "error", "message": "Request must be JSON."}), 400
@@ -178,8 +172,6 @@ def logout():
 def dashboard():
     if 'user' not in session:
         return redirect(url_for('homepage'))
-
-    init_firebase()
     
     user_rooms = []
     if not db:
