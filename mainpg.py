@@ -41,7 +41,7 @@ def get_firebase_app():
         cred_dict=json.loads(config)
         # Fix newline characters
         cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
-        firebase_app = firebase_admin.initialize_app(cred_dict)
+        firebase_app = firebase_admin.initialize_app(credentials.Certificate(cred_dict))
         db = firestore.client()
         print("Firebase initialized")
     return firebase_app,db
