@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -480,7 +481,20 @@
           !msg.endsWith("has entered the room") &&
           !msg.endsWith("has left the room");
 
-        if (isUserMessage) {
+        if (isUserMessage && msg.toUpperCase().startsWith("CLOUDY")) {
+          const senderUsername = "Cloudy";
+          const messageText = msg.substring(colonIndex + 1);
+
+          const usernameSpan = document.createElement("strong");
+          usernameSpan.style.color = getUserColor(senderUsername);
+          usernameSpan.textContent = senderUsername + ":";
+
+          p.appendChild(usernameSpan);
+          const contentSpan = document.createElement('span');
+          contentSpan.innerHTML = marked.parse(messageText);
+          p.appendChild(contentSpan);
+        }
+        else if (isUserMessage){
           const senderUsername = msg.substring(0, colonIndex);
           const messageText = msg.substring(colonIndex + 1);
 
@@ -490,7 +504,8 @@
 
           p.appendChild(usernameSpan);
           p.appendChild(document.createTextNode(messageText));
-        } else {
+        }
+         else {
           p.textContent = msg;
           p.style.fontStyle = "italic";
           p.style.color = "var(--text-secondary)";

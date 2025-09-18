@@ -11,6 +11,8 @@ from flask import Flask, request, render_template, session, redirect, url_for, f
 from flask_socketio import join_room, leave_room, SocketIO, emit
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from google import genai
+
 
 
 
@@ -19,8 +21,7 @@ from firebase_admin import credentials, auth,firestore
 
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=5)
-
-
+gemini_apikey = os.environ.get('GEMINI_KEY')
 app = Flask(__name__)
 
 
@@ -32,23 +33,22 @@ db = None
 firebase_app = None
 db = None
 
+
 def get_firebase_app():
     global firebase_app, db
     if not firebase_app:
-        config = os.environ.get("FIREBASE_CONFIG")
-        cred_dict = json.loads(config)
+         config = os.environ.get("FIREBASE_CONFIG")
         # Fix newline characters
-        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
-        firebase_app = firebase_admin.initialize_app(credentials.Certificate(cred_dict))
+         cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+        firebase_app = firebase_admin.initialize_app(cred_dict)
         db = firestore.client()
         print("Firebase initialized")
     return firebase_app,db
 
 
-
-API_KEY = "AIzaSyAav6iqs8d6XyLztW2oGeiR5rv2kNJW6JI"
-YOUTUBE_API_SERVICE_NAME = "youtube"
-YOUTUBE_API_VERSION = "v3"
+API_KEY = os.environ.get("API_KEY")
+YOUTUBE_API_SERVICE_NAME = os.environ.get("YOUTUBE_API_SERVICE_NAME")
+YOUTUBE_API_VERSION = os.environ.get("YOUTUBE_API_VERSION")
 
 
 def random_room_generator():
@@ -281,10 +281,17 @@ def handle_join(data):
 def handle_send_message(data):
     user_session = sid_to_user.get(request.sid)
     if not user_session: return
-    
+    message = data.get('msg', '').strip()
     room_code = user_session['room']
     username = user_session['username']
     emit('message', {'msg': f"{username}: {data.get('msg', '')}"}, to=room_code)
+    if message.lower().startswith("cloudy"):
+        client = genai.Client(api_key=gemini_apikey)
+        response = client.models.generate_content(
+            model = "gemini-2.5-flash",contents=f"You are Cloudy.An AI teacher who will explain the students about any query that they will have.This is the query of one of your students:{message}.Now you are integrated in a chatbox so the message should be very consise and of about 120 words only (exceed only if necessory),Also dont just always introduce yourself just explain it to the person and NEVER REVEAL THAT YOU ARE GEMINI PLEASE"
+        )
+        print(response.text)
+        emit('message',{'msg':f"Cloudy:{response.text}"},to=room_code)    
 
 @socketio.on('search_video')
 def handle_search_video(data):
@@ -368,4 +375,4 @@ def handle_disconnect():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080)) 
-    socketio.run(app, host='0.0.0.0', port=port, debug=False,allow_unsafe_werkzeug=True)
+    socketio.run(app, host='localhost', port=5000, debug=False,allow_unsafe_werkzeug=True)
