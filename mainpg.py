@@ -37,9 +37,9 @@ db = None
 def get_firebase_app():
     global firebase_app, db
     if not firebase_app:
-         config = os.environ.get("FIREBASE_CONFIG")
+        config = os.environ.get("FIREBASE_CONFIG")
         # Fix newline characters
-         cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
         firebase_app = firebase_admin.initialize_app(cred_dict)
         db = firestore.client()
         print("Firebase initialized")
@@ -375,4 +375,4 @@ def handle_disconnect():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080)) 
-    socketio.run(app, host='localhost', port=5000, debug=False,allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False,allow_unsafe_werkzeug=True)
