@@ -3,6 +3,9 @@
   <head>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" integrity="sha384-sN/2OKsEuA08tBOpHCDcGZISrdC3Mwn4H52iJd0oAM1IioGzVUL3G2elGfBwI6D2" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" integrity="sha384-hIoBPJpTadx5GxmVRLfsOEK3St0rI+3PJJPAew5aXkTgUGRHkGzrsJuhdcK3+abA" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GpZvESnMjQs2r7qjT4IiaE8+ljpS4aaFjH64KU2vTrSviIqT" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Watch Party Room</title>
@@ -513,6 +516,14 @@
 
         chatBox.appendChild(p);
         chatBox.scrollTop = chatBox.scrollHeight;
+        renderMathInElement(messageElement, {
+        delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+        ]
+        });
       });
 
       // --- Member List Logic ---
