@@ -38,6 +38,7 @@ def get_firebase_app():
     global firebase_app, db
     if not firebase_app:
         config = os.environ.get("FIREBASE_CONFIG")
+        cred_dict=json.loads(config)
         # Fix newline characters
         cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
         firebase_app = firebase_admin.initialize_app(cred_dict)
